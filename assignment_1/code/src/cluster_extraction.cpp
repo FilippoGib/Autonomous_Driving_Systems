@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud (new pcl::PointCloud<pcl::PointXYZ>);
 
-    std::vector<boost::filesystem::path> stream(boost::filesystem::directory_iterator{"/app/dataset_1"},
+    std::vector<boost::filesystem::path> stream(boost::filesystem::directory_iterator{"/app/assignment_1/dataset_1"},
                                                 boost::filesystem::directory_iterator{});
 
     // sort files in ascending (chronological) order
