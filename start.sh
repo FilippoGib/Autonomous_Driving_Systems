@@ -1,2 +1,2 @@
 xhost +local:docker
-docker compose run --rm pcl_app
+docker compose run --rm -it pcl_app

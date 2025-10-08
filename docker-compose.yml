@@ -1,12 +1,21 @@
 services:
   pcl_app:
+    ipc: host
     build:
       context: .
       dockerfile: Dockerfile
     volumes:
       - .:/app
-      - /tmp/.X11-unix:/tmp/.X11-unix
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
     environment:
       - DISPLAY=${DISPLAY}
+      - LIBGL_ALWAYS_SOFTWARE=1      # force llvmpipe (software GL)
+      - LIBGL_DRI3_DISABLE=1         # avoid DRI3 path (use DRI2)
+      - QT_X11_NO_MITSHM=1
+      - MESA_LOADER_DRIVER_OVERRIDE=llvmpipe
+      - GALLIUM_DRIVER=llvmpipe
+    devices:
+      - /dev/dri:/dev/dri            # expose DRM render nodes for Mesa (even in software)
+    shm_size: "512m"
     tty: true
     stdin_open: true

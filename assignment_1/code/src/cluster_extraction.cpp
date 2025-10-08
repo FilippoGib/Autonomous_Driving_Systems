@@ -19,6 +19,7 @@
 #include <boost/filesystem.hpp>
 namespace fs = boost::filesystem;
 #define USE_PCL_LIBRARY
+#define DOWNSAMPLING_FROM_MEMORY
 using namespace lidar_obstacle_detection;
 
 typedef std::unordered_set<int> my_visited_set_t;
@@ -94,7 +95,8 @@ std::vector<pcl::PointIndices> euclideanCluster(typename pcl::PointCloud<pcl::Po
 	my_visited_set_t visited{};                                                          //already visited points
 	std::vector<pcl::PointIndices> clusters;                                             //vector of PointIndices that will contain all the clusters
     std::vector<int> cluster;                                                            //vector of int that is used to store the points that the function proximity will give me back
-	//for every point of the cloud
+    
+    //for every point of the cloud
     //  if the point has not been visited (use the function called "find")
     //    find clusters using the proximity function
     //
@@ -103,6 +105,21 @@ std::vector<pcl::PointIndices> euclideanCluster(typename pcl::PointCloud<pcl::Po
     //    end if
     //  end if
     //end for
+
+    for(size_t idx = 0; idx < cloud->points.size(); idx++)
+    {
+        if(visited.find(idx) == visited.end()) // find returns an iterator, the iterator is equal to set.end() if the element was not found
+        {   
+            cluster.clear(); // reset what is inside cluster
+            proximity(cloud, idx, tree, distanceTol, visited, cluster, setMaxClusterSize);
+            if(cluster.size() >= setMinClusterSize)
+            {
+                pcl::PointIndices current_cluster;
+                current_cluster.indices = std::move(cluster);
+                clusters.push_back(std::move(current_cluster));
+            }
+        }
+    }
 	return clusters;	
 }
 
@@ -113,6 +130,28 @@ ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane (new pcl::PointCloud<pcl::PointXYZ> ());
 
+    #ifdef DOWNSAMPLING_FROM_MEMORY // downsample directly in memory
+    // cons: you must assume pcl point are ordered, you don't account for points density
+    // pros: approx. 3x faster than voxelization (empirical)
+    int n = 2; // factor of downsampling
+    std::vector<pcl::PointXYZ, Eigen::aligned_allocator<pcl::PointXYZ>> filtered_points;
+    std::size_t output_size = (cloud->points.size() + n - 1) / n;
+    filtered_points.reserve(output_size);
+    for(size_t i = 0; i < cloud->points.size(); i+=n)
+    {
+       filtered_points.push_back(cloud->points[i]);
+    }
+    cloud_filtered->points = std::move(filtered_points);
+    cloud_filtered->height = 1;
+    cloud_filtered->width = output_size;
+
+    #else // use voxelization
+    pcl::VoxelGrid<pcl::PointXYZ> vg;
+    vg.setInputCloud (cloud);
+    vg.setLeafSize (0.01f, 0.01f, 0.01f); 	
+    vg.filter (*cloud_filtered);
+    #endif
+
     // 2) here we crop the points that are far away from us, in which we are not interested
     pcl::CropBox<pcl::PointXYZ> cb(true);
     cb.setInputCloud(cloud_filtered);
@@ -121,8 +160,15 @@ ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::
     cb.filter(*cloud_filtered); 
 
     // TODO: 3) Segmentation and apply RANSAC
-
-
+    pcl::SACSegmentation<pcl::PointXYZ> seg;
+    pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+    pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
+    pcl::PCDWriter writer;
+    seg.setOptimizeCoefficients (true);
+    seg.setModelType (pcl::SACMODEL_PLANE);
+    seg.setMethodType (pcl::SAC_RANSAC);
+    seg.setMaxIterations (100);
+    seg.setDistanceThreshold (0.01);
     // TODO: 4) iterate over the filtered cloud, segment and remove the planar inliers 
 
 
@@ -182,6 +228,8 @@ ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::
         ++clusterId;
         j++;
     }  
+    
+    // renderer.RenderPointCloud(cloud,"originalCloud",Color(1,1,1)); // uncomment if you just want to see the original pc
 
 }
 
