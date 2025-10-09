@@ -19,7 +19,7 @@
 #include <boost/filesystem.hpp>
 #include <thread>
 namespace fs = boost::filesystem;
-// #define USE_PCL_LIBRARY
+#define USE_PCL_LIBRARY
 // #define DOWNSAMPLING_FROM_MEMORY
 #define RENDER_ORIGINAL_CLOUD
 // #define CAP_HZ

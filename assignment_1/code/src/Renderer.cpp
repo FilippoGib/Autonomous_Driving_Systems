@@ -166,7 +166,7 @@ namespace lidar_obstacle_detection
     // Slightly above the top face of the box
     pcl::PointXYZ label_pos(box_center.x(), box_center.y(), box.z_max + 0.05f);
 
-    viewer_->addText3D(label_text, label_pos, 0.4, 1.0, 1.0, 1.0, label_id);
+    viewer_->addText3D(label_text, label_pos, 0.6, 1.0, 1.0, 1.0, label_id);
   }
 
   void Renderer::RenderBox(const BoxQ& box, const int id, const Color& color, float opacity)
