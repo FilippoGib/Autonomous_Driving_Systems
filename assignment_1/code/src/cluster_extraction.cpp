@@ -19,16 +19,16 @@
 #include <boost/filesystem.hpp>
 #include <thread>
 namespace fs = boost::filesystem;
-#define USE_PCL_LIBRARY
+// #define USE_PCL_LIBRARY
 // #define DOWNSAMPLING_FROM_MEMORY
-// #define RENDER_ORIGINAL_CLOUD
-#define CAP_HZ
+#define RENDER_ORIGINAL_CLOUD
+// #define CAP_HZ
 using namespace lidar_obstacle_detection;
 
 typedef std::unordered_set<int> my_visited_set_t;
 
 //This function sets up the custom kdtree using the point cloud
-void setupKdtree(typename pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, my_pcl::KdTree* tree, int dimension)
+void setupKdtree(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, my_pcl::KdTree* tree, int dimension)
 {
     //insert point cloud points into tree
     for (int i = 0; i < cloud->size(); ++i)
@@ -52,7 +52,7 @@ This function computes the nearest neighbors and builds the clusters
         + visited: already visited points
         + cluster: at the end of this function we will have one cluster
 */
-void proximity(typename pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int target_ndx, my_pcl::KdTree* tree, float distanceTol, my_visited_set_t& visited, std::vector<int>& cluster, int max)
+void proximity(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, int target_ndx, my_pcl::KdTree* tree, float distanceTol, my_visited_set_t& visited, std::vector<int>& cluster, int max)
 {
 	if (cluster.size() < max)
     {
@@ -93,7 +93,7 @@ This function builds the clusters following a euclidean clustering approach
         + cluster: at the end of this function we will have a set of clusters
 TODO: Complete the function
 */
-std::vector<pcl::PointIndices> euclideanCluster(typename pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, my_pcl::KdTree* tree, float distanceTol, int setMinClusterSize, int setMaxClusterSize)
+std::vector<pcl::PointIndices> euclideanCluster(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud, my_pcl::KdTree* tree, float distanceTol, int setMinClusterSize, int setMaxClusterSize)
 {
 	my_visited_set_t visited{};                                                          //already visited points
 	std::vector<pcl::PointIndices> clusters;                                             //vector of PointIndices that will contain all the clusters
@@ -129,9 +129,9 @@ std::vector<pcl::PointIndices> euclideanCluster(typename pcl::PointCloud<pcl::Po
 void 
 ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud)
 {
-    int setMinClusterSize = 20;
-    int setMaxClusterSize = 250;
-    double setClusterTolerance = 0.2f;
+    int setMinClusterSize = 50;
+    int setMaxClusterSize = 2000;
+    double setClusterTolerance = 0.50f;
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane (new pcl::PointCloud<pcl::PointXYZ> ()), cloud_f (new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -174,17 +174,17 @@ ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::
     seg.setModelType (pcl::SACMODEL_PLANE);
     seg.setMethodType (pcl::SAC_RANSAC);
     seg.setMaxIterations (100);
-    seg.setDistanceThreshold (0.01);
+    seg.setDistanceThreshold (0.15);
 
     // TODO: 4) iterate over the filtered cloud, segment and remove the planar inliers 
-    while (cloud_filtered->size () > 0.02 * cloud->size()) // 30%
+    while (cloud_filtered->size () > 0.015 * cloud->size())
     {
         // Segment the largest planar component from the remaining cloud
         seg.setInputCloud (cloud_filtered);
         seg.segment (*inliers, *coefficients);
         if (inliers->indices.size () == 0)
         {
-            std::cout << "Could not estimate a planar model for the given dataset." << std::endl;
+            std::cout << "Could not estimate a planar model for remaining points." << std::endl;
             break;
         }
 
@@ -207,26 +207,27 @@ ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::
         *cloud_filtered = *cloud_f;
     }
 
-    // TODO: 5) Create the KDTree and the vector of PointIndices
-    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
-    tree->setInputCloud (cloud_filtered);
-    
+    // TODO: 5) Create the vector of PointIndices
+
     std::vector<pcl::PointIndices> cluster_indices;
 
     // TODO: 6) Set the spatial tolerance for new cluster candidates (pay attention to the tolerance!!!)
 
     #ifdef USE_PCL_LIBRARY
         //PCL functions
+        pcl::search::KdTree<pcl::PointXYZ>::Ptr tree (new pcl::search::KdTree<pcl::PointXYZ>);
+        tree->setInputCloud (cloud_filtered);
+            
         //HERE 6)
         pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
         //Set the spatial tolerance for new cluster candidates
-        ec.setClusterTolerance (setClusterTolerance); // 20cm
+        ec.setClusterTolerance(setClusterTolerance); // 20cm
         //We impose that the clusters found must have at least setMinClusterSize() points and maximum setMaxClusterSize() points
-        ec.setMinClusterSize (setMinClusterSize);
-        ec.setMaxClusterSize (setMaxClusterSize);
-        ec.setSearchMethod (tree);
-        ec.setInputCloud (cloud_filtered);
-        ec.extract (cluster_indices);
+        ec.setMinClusterSize(setMinClusterSize);
+        ec.setMaxClusterSize(setMaxClusterSize);
+        ec.setSearchMethod(tree);
+        ec.setInputCloud(cloud_filtered);
+        ec.extract(cluster_indices);
     #else
         // Optional assignment
         my_pcl::KdTree treeM;
@@ -255,27 +256,27 @@ ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::
         cloud_cluster->height = 1;
         cloud_cluster->is_dense = true;
 
-        #ifdef RENDER_ORIGINAL_CLOUD
-            renderer.RenderPointCloud(cloud,"originalCloud",colors[3]);
-        #else
-            // TODO: 7) render the cluster and plane without rendering the original cloud 
-                renderer.RenderPointCloud(cloud_cluster,"Cluster"+std::to_string(clusterId),colors[2]);
-
-
-            //Here we create the bounding box on the detected clusters
-            pcl::PointXYZ minPt, maxPt;
-            pcl::getMinMax3D(*cloud_cluster, minPt, maxPt);
-
-            //TODO: 8) Here you can plot the distance of each cluster w.r.t ego vehicle
-            Box box{minPt.x, minPt.y, minPt.z,
-            maxPt.x, maxPt.y, maxPt.z};
-            //TODO: 9) Here you can color the vehicles that are both in front and 5 meters away from the ego vehicle
-            //please take a look at the function RenderBox to see how to color the box
-            renderer.RenderBox(box, j);
+        // TODO: 7) render the cluster and plane without rendering the original cloud 
+        #ifndef RENDER_ORIGINAL_CLOUD
+            renderer.RenderPointCloud(cloud_cluster,"Cluster"+std::to_string(clusterId),colors[2]);
         #endif
+        //Here we create the bounding box on the detected clusters
+        pcl::PointXYZ minPt, maxPt;
+        pcl::getMinMax3D(*cloud_cluster, minPt, maxPt);
+        //TODO: 8) Here you can plot the distance of each cluster w.r.t ego vehicle
+        Box box{minPt.x, minPt.y, minPt.z,
+        maxPt.x, maxPt.y, maxPt.z};
+        //TODO: 9) Here you can color the vehicles that are both in front and 5 meters away from the ego vehicle
+        //please take a look at the function RenderBox to see how to color the box
+        renderer.RenderBox(box, j);
+        
         ++clusterId;
         j++;
     }  
+    #ifdef RENDER_ORIGINAL_CLOUD
+        renderer.RenderPointCloud(cloud,"originalCloud",colors[3]);
+    #endif
+
 }
 
 
