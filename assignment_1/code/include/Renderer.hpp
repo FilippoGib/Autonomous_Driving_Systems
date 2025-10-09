@@ -74,7 +74,7 @@ namespace lidar_obstacle_detection
                           const std::string& name,
                           const Color& color = Color(-1,-1,-1));
 
-    void RenderBox(const Box& box, int id, const Color& color = Color(1,0,0), float opacity = 1.0);
+    void RenderBox(const Box& box, int id, Eigen::Vector3f box_center, double distance, const Color& color = Color(1,0,0), float opacity = 1.0);
 
     void RenderBox(const BoxQ& box, int id, const Color& color = Color(1,0,0), float opacity = 1.0);
 

@@ -126,6 +126,11 @@ std::vector<pcl::PointIndices> euclideanCluster(pcl::PointCloud<pcl::PointXYZ>::
 	return clusters;	
 }
 
+static double mean(double a, double b)
+{
+    return (a+b)/2.0f;
+}
+
 void 
 ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud)
 {
@@ -266,10 +271,26 @@ ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::
         //TODO: 8) Here you can plot the distance of each cluster w.r.t ego vehicle
         Box box{minPt.x, minPt.y, minPt.z,
         maxPt.x, maxPt.y, maxPt.z};
-        //TODO: 9) Here you can color the vehicles that are both in front and 5 meters away from the ego vehicle
-        //please take a look at the function RenderBox to see how to color the box
-        renderer.RenderBox(box, j);
+        Eigen::Vector3f box_center;
+        box_center.x() = mean(minPt.x, maxPt.x);
+        box_center.y() = mean(minPt.y, maxPt.y);
+        box_center.z() = mean(minPt.z, maxPt.z);
+        double distance = box_center.norm();
+
+        double street_width = 50.0;
+        double front_distance_threshold = 50.0; // the assignment says 5.0 m but it looks small
         
+        //TODO: 9) Here you can color the vehicles that are both in front and 5 meters away from the ego vehicle
+        // we assume a object is in front of the vehichle if it's x value is positive and its y value is between +4 and -4 meters
+        if(((minPt.x > 0.0) || (box_center.x() > 0.0)) && (((minPt.y < street_width)&&(minPt.y > (-street_width))) || ((maxPt.y < street_width)&&(maxPt.y > (-street_width)))) && (distance <= front_distance_threshold))
+        {
+
+                renderer.RenderBox(box, j, box_center, distance, colors[1]);
+        }
+        else
+        {
+            renderer.RenderBox(box, j, box_center, distance);
+        }
         ++clusterId;
         j++;
     }  

@@ -129,7 +129,7 @@ namespace lidar_obstacle_detection
   }
 
   // Draw wire frame box with filled transparent color
-  void Renderer::RenderBox(const Box& box, const int id, const Color& color, float opacity)
+  void Renderer::RenderBox(const Box& box, const int id, Eigen::Vector3f box_center, double distance, const Color& color, float opacity)
   {
     if(opacity > 1.0) opacity = 1.0;
     if(opacity < 0.0) opacity = 0.0;
@@ -156,6 +156,17 @@ namespace lidar_obstacle_detection
     viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_COLOR, color.r, color.g, color.b, cubeFill);
 
     viewer_->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, opacity*0.3, cubeFill);
+
+    std::string label_id = "label" + std::to_string(id);
+
+    char buffer[5];
+    std::sprintf(buffer, "%.2f", distance);
+    std::string label_text(buffer);
+
+    // Slightly above the top face of the box
+    pcl::PointXYZ label_pos(box_center.x(), box_center.y(), box.z_max + 0.05f);
+
+    viewer_->addText3D(label_text, label_pos, 0.4, 1.0, 1.0, 1.0, label_id);
   }
 
   void Renderer::RenderBox(const BoxQ& box, const int id, const Color& color, float opacity)
