@@ -226,7 +226,7 @@ ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::
         //HERE 6)
         pcl::EuclideanClusterExtraction<pcl::PointXYZ> ec;
         //Set the spatial tolerance for new cluster candidates
-        ec.setClusterTolerance(setClusterTolerance); // 20cm
+        ec.setClusterTolerance(setClusterTolerance);
         //We impose that the clusters found must have at least setMinClusterSize() points and maximum setMaxClusterSize() points
         ec.setMinClusterSize(setMinClusterSize);
         ec.setMaxClusterSize(setMaxClusterSize);
