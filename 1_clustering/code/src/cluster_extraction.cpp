@@ -134,9 +134,9 @@ static double mean(double a, double b)
 void 
 ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud)
 {
-    int setMinClusterSize = 50;
-    int setMaxClusterSize = 2000;
-    double setClusterTolerance = 0.50f;
+    int setMinClusterSize = 30;
+    int setMaxClusterSize = 1000;
+    double setClusterTolerance = 0.40f;
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane (new pcl::PointCloud<pcl::PointXYZ> ()), cloud_f (new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -182,7 +182,7 @@ ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::
     seg.setDistanceThreshold (0.15);
 
     // TODO: 4) iterate over the filtered cloud, segment and remove the planar inliers 
-    while (cloud_filtered->size () > 0.015 * cloud->size())
+    while (cloud_filtered->size () > 0.015f * cloud->size())
     {
         // Segment the largest planar component from the remaining cloud
         seg.setInputCloud (cloud_filtered);
@@ -316,7 +316,7 @@ int main(int argc, char* argv[])
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud (new pcl::PointCloud<pcl::PointXYZ>);
 
-    std::vector<boost::filesystem::path> stream(boost::filesystem::directory_iterator{"/app/assignment_1/dataset_1"},
+    std::vector<boost::filesystem::path> stream(boost::filesystem::directory_iterator{"/app/assignment_1/dataset_2"},
                                                 boost::filesystem::directory_iterator{});
 
     // sort files in ascending (chronological) order
