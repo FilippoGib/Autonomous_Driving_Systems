@@ -18,11 +18,14 @@
 #include "../include/tree_utilities.hpp"
 #include <boost/filesystem.hpp>
 #include <thread>
-namespace fs = boost::filesystem;
+
 #define USE_PCL_LIBRARY
+// #define CHECK_BB
 // #define DOWNSAMPLING_FROM_MEMORY
 #define RENDER_ORIGINAL_CLOUD
 // #define CAP_HZ
+
+namespace fs = boost::filesystem;
 using namespace lidar_obstacle_detection;
 
 typedef std::unordered_set<int> my_visited_set_t;
@@ -131,12 +134,95 @@ static double mean(double a, double b)
     return (a+b)/2.0f;
 }
 
-void 
-ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud)
+static inline double ratio(double a, double b) 
 {
-    int setMinClusterSize = 30;
-    int setMaxClusterSize = 1000;
-    double setClusterTolerance = 0.40f;
+    if(std::abs(b) < 1e-6) // degenerate case
+    {
+        return std::numeric_limits<double>::infinity();
+    }
+    return(a/b);
+}
+
+static inline bool in_range(double value, double lowerbound, double higherbound)
+{
+    return ((value >= lowerbound) && (value <= higherbound));
+}
+
+static bool isCarOrPedestrianOrBike(const pcl::PointXYZ& minPt, const pcl::PointXYZ& maxPt)
+{
+    const double car_length_width_threshold = 1.2;
+    const double car_length_height_threshold = 1.2;
+    const double car_width_height_threshold = 1.5;
+
+    const double bike_length_width_threshold = 1.5;
+    const double bike_height_width_threshold = 1.5;
+    const double bike_width_height_threshold = 1.2;
+
+    const double person_height_base_threshold = 2.0;
+
+    double width  = std::abs(maxPt.x - minPt.x);
+    double length = std::abs(maxPt.y - minPt.y);
+    double height = std::abs(maxPt.z - minPt.z);
+
+    if (!std::isfinite(width) || !std::isfinite(length) || !std::isfinite(height))
+    {
+        return false;
+    }
+
+    if (width > length) 
+    {
+        std::swap(width, length); // just to make sure we use conventional naming (in pedestrians width and length lose meaning but whatever)
+    }
+
+    if (width < 0.3 || length < 0.3 || height < 1.0 || width > 3.5 || length > 7.5 || height > 3.5) // discard absurd values
+    {
+        return false;
+    }
+
+    double l_w = ratio(length, width);              
+    double l_h = ratio(length, height);
+    double w_h = ratio(width, height);
+    double h_w = ratio(height, width);
+    double h_w_l = ratio(height, std::max(width, length)); //used for pedestrians
+
+    if (!std::isfinite(l_w) || !std::isfinite(l_h) || !std::isfinite(w_h) || !std::isfinite(h_w) || !std::isfinite(h_w_l))
+    {
+        return false;
+    }
+
+    // lets see if it might be a car
+    bool isCar =
+        in_range(length, 2.0, 6.0) && 
+        in_range(width,  1.3, 2.5) &&
+        in_range(height, 1.3, 2.5) &&
+        l_w >= car_length_width_threshold &&    // length > width
+        l_h >= car_length_height_threshold &&   // length > height
+        w_h <= car_width_height_threshold;      // width and height not wildly different
+
+    // lets see if it might be a bike
+    bool isBike =
+        in_range(length, 1.0, 2.5) &&
+        in_range(width,  0.5, 1.0) &&
+        in_range(height, 1.0, 2.0) &&
+        l_w >= bike_length_width_threshold &&   // the length of the bike should be considerably greater that its width
+        h_w >= bike_height_width_threshold &&   // the height of the bike should be considerably greater than its width
+        w_h <= bike_width_height_threshold;     // width and height not wildly different
+
+    // Pedestrian
+    bool isPed = 
+        in_range(length, 0.3, 0.8) &&
+        in_range(width,  0.3, 0.8) &&
+        in_range(height, 1.4, 2.0) &&
+        h_w_l >= person_height_base_threshold; // tall vs footprint
+
+    return isCar || isBike || isPed;
+}
+
+void ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud)
+{
+    int setMinClusterSize = 20;
+    int setMaxClusterSize = 150;
+    double setClusterTolerance = 0.50f;
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_plane (new pcl::PointCloud<pcl::PointXYZ> ()), cloud_f (new pcl::PointCloud<pcl::PointXYZ>);
 
@@ -256,7 +342,9 @@ ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::
     {
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
         for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
-        cloud_cluster->push_back ((*cloud_filtered)[*pit]); 
+        {
+            cloud_cluster->push_back ((*cloud_filtered)[*pit]); 
+        }
         cloud_cluster->width = cloud_cluster->size ();
         cloud_cluster->height = 1;
         cloud_cluster->is_dense = true;
@@ -265,31 +353,38 @@ ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::
         #ifndef RENDER_ORIGINAL_CLOUD
             renderer.RenderPointCloud(cloud_cluster,"Cluster"+std::to_string(clusterId),colors[2]);
         #endif
+
         //Here we create the bounding box on the detected clusters
         pcl::PointXYZ minPt, maxPt;
         pcl::getMinMax3D(*cloud_cluster, minPt, maxPt);
         //TODO: 8) Here you can plot the distance of each cluster w.r.t ego vehicle
         Box box{minPt.x, minPt.y, minPt.z,
         maxPt.x, maxPt.y, maxPt.z};
-        Eigen::Vector3f box_center;
-        box_center.x() = mean(minPt.x, maxPt.x);
-        box_center.y() = mean(minPt.y, maxPt.y);
-        box_center.z() = mean(minPt.z, maxPt.z);
-        double distance = box_center.norm();
 
-        double street_width = 50.0;
-        double front_distance_threshold = 50.0; // the assignment says 5.0 m but it looks small
-        
-        //TODO: 9) Here you can color the vehicles that are both in front and 5 meters away from the ego vehicle
-        // we assume a object is in front of the vehichle if it's x value is positive and its y value is between +4 and -4 meters
-        if(((minPt.x > 0.0) || (box_center.x() > 0.0)) && (((minPt.y < street_width)&&(minPt.y > (-street_width))) || ((maxPt.y < street_width)&&(maxPt.y > (-street_width)))) && (distance <= front_distance_threshold))
-        {
+        #ifdef CHECK_BB
+        bool render = isCarOrPedestrianOrBike(minPt, maxPt); // I apply a check on the shape and volume of the box to check if it is a Car, a Pedestrian or a Bike.
+        #else
+        bool render = true;
+        #endif
+        if(render){
+            Eigen::Vector3f box_center;
+            box_center.x() = mean(minPt.x, maxPt.x);
+            box_center.y() = mean(minPt.y, maxPt.y);
+            box_center.z() = mean(minPt.z, maxPt.z);
+            double distance = box_center.norm();
 
-                renderer.RenderBox(box, j, box_center, distance, colors[1]);
-        }
-        else
-        {
-            renderer.RenderBox(box, j, box_center, distance);
+            double street_width = 50.0;
+            double front_distance_threshold = 50.0; // the assignment says 5.0 m but it looks small
+            //TODO: 9) Here you can color the vehicles that are both in front and 5 meters away from the ego vehicle
+            // we assume a object is in front of the vehichle if it's x value is positive and its y value is between +4 and -4 meters
+            if(((minPt.x > 0.0) || (box_center.x() > 0.0)) && (((minPt.y < street_width)&&(minPt.y > (-street_width))) || ((maxPt.y < street_width)&&(maxPt.y > (-street_width)))) && (distance <= front_distance_threshold))
+            {
+                    renderer.RenderBox(box, j, box_center, distance, colors[1]);
+            }
+            else
+            {
+                renderer.RenderBox(box, j, box_center, distance);
+            }
         }
         ++clusterId;
         j++;
@@ -316,7 +411,7 @@ int main(int argc, char* argv[])
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud (new pcl::PointCloud<pcl::PointXYZ>);
 
-    std::vector<boost::filesystem::path> stream(boost::filesystem::directory_iterator{"/app/assignment_1/dataset_2"},
+    std::vector<boost::filesystem::path> stream(boost::filesystem::directory_iterator{"/app/1_clustering/dataset_2"},
                                                 boost::filesystem::directory_iterator{});
 
     // sort files in ascending (chronological) order
