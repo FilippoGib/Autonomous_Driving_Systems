@@ -51,16 +51,17 @@ void Tracker::addTracks(const std::vector<bool> &associated_detections, const st
 void Tracker::dataAssociation(std::vector<bool> &associated_detections, const std::vector<double> &centroids_x, const std::vector<double> &centroids_y)
 {
 
-    //Remind this vector contains a pair of tracks and its corresponding
+    //Remind this vector contains a pair of <track_idx, detection_idx>
     associated_track_det_ids_.clear();
+    size_t number_of_detections = associated_detections.size();
+    size_t number_of_tracks = tracks_.size(); 
 
-    for (size_t i = 0; i < tracks_.size(); ++i)
+    for (size_t i = 0; i < number_of_tracks; ++i) // for each track find the correspondent detection using a distance metric (euclidean, mahalanobis, ...)
     {
-
         int closest_point_id = -1;
         double min_dist = std::numeric_limits<double>::max();
 
-        for (size_t j = 0; j < associated_detections.size(); ++j)
+        for (size_t j = 0; j < number_of_detections; ++j)
         {
             // TODO
             // Implement logic to find the closest detection (centroids_x,centroids_y) 
@@ -82,12 +83,19 @@ void Tracker::track(const std::vector<double> &centroids_x,
                     bool lidarStatus)
 {
 
-    std::vector<bool> associated_detections(centroids_x.size(), false);
+    std::vector<bool> associated_detections(centroids_x.size(), false); 
+    // associated_detections is just to keep track of the detections that we have associated to a tracklet after the association process.
+    // the elements of associated_detections that are false after the association process 
 
     // TODO: Predict the position
     //For each track --> Predict the position of the tracklets
+    for (auto track : tracks_)
+    {
+        track.predict();
+    }
     
     // TODO: Associate the predictions with the detections
+
 
     // Update tracklets with the new detections
     for (int i = 0; i < associated_track_det_ids_.size(); ++i)
