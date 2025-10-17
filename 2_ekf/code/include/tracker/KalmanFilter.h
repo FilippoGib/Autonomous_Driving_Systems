@@ -23,6 +23,7 @@ public:
   double getYCovariance() { return P_.coeff(1, 1); }
   double getX() { return x_[0]; }
   double getY() { return x_[1]; }
+  Eigen::MatrixXd getS(){return S_;};
 
 private:
   // dt in seconds
@@ -45,6 +46,8 @@ private:
 
   // measurement covariance matrix
   Eigen::MatrixXd R_;
+
+  Eigen::MatrixXd S_; // I need to expose the innvoation covariance to compute the Mahalanobis distance
 };
 
 #endif // KALMAN_FILTER_H_

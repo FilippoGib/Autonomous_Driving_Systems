@@ -1,11 +1,11 @@
 #include "tracker/Tracker.h"
 
-#define EUCLIDEAN
+#define MAHALANOBIS // EUCLIDEAN or MAHALANOBIS
 
 Tracker::Tracker()
 {
     cur_id_ = 0;
-    distance_threshold_ = 0.40; // meters
+    distance_threshold_ = 5.991; // 0.40 meters works for euclidean, 5.991 works for Mahalanobis reason: https://math.arizona.edu/~jwatkins/chi-square-table.pdf where df=2, alpha = 0.050 which means .95 confidence level
     covariance_threshold = 50.0; 
     loss_threshold = 30; //number of frames the track has not been associated with anyone
 }
@@ -50,6 +50,19 @@ static inline double euclidean_distance(Tracklet& t, double x, double y)
     return std::hypot(t.getX() - x, t.getY() - y);
 }
 
+static inline double mahalanobis_distance(Tracklet& t, double x, double y)
+{
+    Eigen::Vector2f mean;
+    mean << t.getX(), t.getY(); // this is already the predicted state 
+
+    Eigen::Vector2f observation;
+    observation << x, y;
+
+    Eigen::Matrix2f covariance = t.getS().block<2,2>(0,0).cast<float>(); // current innovation
+
+    return std::sqrt((observation-mean).transpose() * covariance.inverse() * (observation-mean));
+}
+
 /*
     This function associates detections (centroids_x,centroids_y) with the tracks (tracks_)
     Input:
@@ -78,7 +91,7 @@ void Tracker::dataAssociation(std::vector<bool> &associated_detections, const st
             #ifdef EUCLIDEAN
                 current_distance = euclidean_distance(tracks_[i], centroids_x[j], centroids_y[j]);
             #elif defined(MAHALANOBIS)
-                current_distance = mahalanobis_distance(tracks_[i], centroids_x[j], centroids_y[i]);
+                current_distance = mahalanobis_distance(tracks_[i], centroids_x[j], centroids_y[j]);
             #else 
                 #error "No distance metric defined at compile time"
             #endif

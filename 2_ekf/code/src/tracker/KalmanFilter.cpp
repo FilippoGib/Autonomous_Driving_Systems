@@ -33,6 +33,9 @@ void KalmanFilter::init(double dt)
   H_ << 1., 0., 0., 0.,
       0., 1., 0., 0.;
 
+  // innovation matrix
+  S_ = H_ * P_ * H_.transpose();
+
   // the transition matrix F
   F_ = Eigen::MatrixXd(4, 4);
   F_ << 1., 0., dt_, 0.,
@@ -70,8 +73,8 @@ void KalmanFilter::update(const Eigen::VectorXd &z)
   // Implement Kalman Filter Update
 
   Eigen::VectorXd y = z - H_ * x_;
-  Eigen::MatrixXd S = H_ * P_ * H_.transpose() + R_;
-  Eigen::MatrixXd K = P_ * H_.transpose() * S.inverse();
+  S_ = H_ * P_ * H_.transpose() + R_;
+  Eigen::MatrixXd K = P_ * H_.transpose() * S_.inverse();
 
   // new estimate
   x_ = x_ + (K * y);
