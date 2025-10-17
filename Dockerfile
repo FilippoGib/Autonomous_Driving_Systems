@@ -1,4 +1,3 @@
-# Start with a base image that has the modern libraries
 FROM ubuntu:24.04
 
 # set a non-interactive frontend to avoid prompts during build
@@ -28,5 +27,4 @@ RUN echo "source /opt/ros/rolling/setup.bash" >> /root/.bashrc
 
 WORKDIR /app
 
-# set the default command to an interactive bash shell. The bashrc is sourced automatically
 CMD ["/bin/bash"]
