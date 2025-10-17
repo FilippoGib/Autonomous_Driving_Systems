@@ -1,11 +1,13 @@
 #include "tracker/Tracker.h"
 
+#define EUCLIDEAN
+
 Tracker::Tracker()
 {
     cur_id_ = 0;
-    distance_threshold_ = 0.0; // meters
-    covariance_threshold = 0.0; 
-    loss_threshold = 0; //number of frames the track has not been seen
+    distance_threshold_ = 0.40; // meters
+    covariance_threshold = 50.0; 
+    loss_threshold = 30; //number of frames the track has not been associated with anyone
 }
 Tracker::~Tracker()
 {
@@ -18,14 +20,15 @@ void Tracker::removeTracks()
 {
     std::vector<Tracklet> tracks_to_keep;
 
-    for (size_t i = 0; i < tracks_.size(); ++i)
+    for (size_t i = 0; i < tracks_.size(); ++i) // iterate over all the tracklets 
     {
         // TODO
         // Implement logic to discard old tracklets
-        // logic_to_keep is a dummy placeholder to make the code compile and should be subsituted with the real condition
-        bool logic_to_keep = true;
-        if (logic_to_keep)
-            tracks_to_keep.push_back(tracks_[i]);
+
+        if ((tracks_[i].getLossCount() < loss_threshold) && (tracks_[i].getXCovariance() < covariance_threshold)  && (tracks_[i].getYCovariance() < covariance_threshold))
+        {
+           tracks_to_keep.push_back(tracks_[i]);
+        }
     }
 
     tracks_.swap(tracks_to_keep);
@@ -40,6 +43,11 @@ void Tracker::addTracks(const std::vector<bool> &associated_detections, const st
     for (size_t i = 0; i < associated_detections.size(); ++i)
         if (!associated_detections[i])
             tracks_.push_back(Tracklet(cur_id_++, centroids_x[i], centroids_y[i]));
+}
+
+static inline double euclidean_distance(Tracklet& t, double x, double y)
+{
+    return std::hypot(t.getX() - x, t.getY() - y);
 }
 
 /*
@@ -66,16 +74,30 @@ void Tracker::dataAssociation(std::vector<bool> &associated_detections, const st
             // TODO
             // Implement logic to find the closest detection (centroids_x,centroids_y) 
             // to the current track (tracks_) 
-            
+            double current_distance = std::numeric_limits<double>::max();
+            #ifdef EUCLIDEAN
+                current_distance = euclidean_distance(tracks_[i], centroids_x[j], centroids_y[j]);
+            #elif defined(MAHALANOBIS)
+                current_distance = mahalanobis_distance(tracks_[i], centroids_x[j], centroids_y[i]);
+            #else 
+                #error "No distance metric defined at compile time"
+            #endif
+
+            if (current_distance < min_dist)
+            {
+                min_dist = current_distance;
+                closest_point_id = j;
+            }
         }
 
         // Associate the closest detection to a tracklet
         if (min_dist < distance_threshold_ && !associated_detections[closest_point_id])
         {
-            associated_track_det_ids_.push_back(std::make_pair(closest_point_id, i));
+            associated_track_det_ids_.push_back(std::make_pair(i, closest_point_id)); // i = tracklet idx, closest_point_id = detection idx
             associated_detections[closest_point_id] = true;
         }
     }
+    // at the end of this block I could have detections not associated to any tracklet and tracklets not associated to any detection
 }
 
 void Tracker::track(const std::vector<double> &centroids_x,
@@ -89,23 +111,27 @@ void Tracker::track(const std::vector<double> &centroids_x,
 
     // TODO: Predict the position
     //For each track --> Predict the position of the tracklets
-    for (auto track : tracks_)
+    for (auto& track : tracks_)
     {
         track.predict();
     }
     
     // TODO: Associate the predictions with the detections
-
+    dataAssociation(associated_detections, centroids_x, centroids_y);
 
     // Update tracklets with the new detections
     for (int i = 0; i < associated_track_det_ids_.size(); ++i)
     {
-        auto det_id = associated_track_det_ids_[i].first;
-        auto track_id = associated_track_det_ids_[i].second;
+        auto track_id = associated_track_det_ids_[i].first;
+        auto det_id = associated_track_det_ids_[i].second;
+
+        // if the track_id has recieved a detection than we reset the no_detection_counter to zero
         tracks_[track_id].update(centroids_x[det_id], centroids_y[det_id], lidarStatus);
     }
 
     // TODO: Remove dead tracklets
+    removeTracks();
 
     // TODO: Add new tracklets
+    addTracks(associated_detections, centroids_x, centroids_y);
 }
