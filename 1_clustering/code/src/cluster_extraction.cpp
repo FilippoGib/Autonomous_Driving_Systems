@@ -255,8 +255,12 @@ ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::
     for (std::vector<pcl::PointIndices>::const_iterator it = cluster_indices.begin (); it != cluster_indices.end (); ++it)
     {
         pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster (new pcl::PointCloud<pcl::PointXYZ>);
+
         for (std::vector<int>::const_iterator pit = it->indices.begin (); pit != it->indices.end (); ++pit)
-        cloud_cluster->push_back ((*cloud_filtered)[*pit]); 
+        {
+            cloud_cluster->push_back ((*cloud_filtered)[*pit]); 
+        }    
+
         cloud_cluster->width = cloud_cluster->size ();
         cloud_cluster->height = 1;
         cloud_cluster->is_dense = true;
@@ -277,15 +281,15 @@ ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointXYZ>::
         box_center.z() = mean(minPt.z, maxPt.z);
         double distance = box_center.norm();
 
-        double street_width = 50.0;
-        double front_distance_threshold = 50.0; // the assignment says 5.0 m but it looks small
+        double street_width = 20.0;
+        double front_distance_threshold = 10.0; // the assignment says 5.0 m but it looks small
         
         //TODO: 9) Here you can color the vehicles that are both in front and 5 meters away from the ego vehicle
         // we assume a object is in front of the vehichle if it's x value is positive and its y value is between +4 and -4 meters
         if(((minPt.x > 0.0) || (box_center.x() > 0.0)) && (((minPt.y < street_width)&&(minPt.y > (-street_width))) || ((maxPt.y < street_width)&&(maxPt.y > (-street_width)))) && (distance <= front_distance_threshold))
         {
 
-                renderer.RenderBox(box, j, box_center, distance, colors[1]);
+                renderer.RenderBox(box, j, box_center, distance, colors[0]);
         }
         else
         {
