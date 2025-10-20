@@ -20,7 +20,7 @@
 #include <thread>
 
 #define USE_PCL_LIBRARY
-// #define CHECK_BB
+#define CHECK_BB
 // #define DOWNSAMPLING_FROM_MEMORY
 #define RENDER_ORIGINAL_CLOUD
 // #define CAP_HZ
@@ -373,13 +373,13 @@ void ProcessAndRenderPointCloud (Renderer& renderer, pcl::PointCloud<pcl::PointX
             box_center.z() = mean(minPt.z, maxPt.z);
             double distance = box_center.norm();
 
-            double street_width = 50.0;
-            double front_distance_threshold = 50.0; // the assignment says 5.0 m but it looks small
+            double street_width = 30.0;
+            double front_distance_threshold = 10.0; // the assignment says 5.0 m but it looks small
             //TODO: 9) Here you can color the vehicles that are both in front and 5 meters away from the ego vehicle
             // we assume a object is in front of the vehichle if it's x value is positive and its y value is between +4 and -4 meters
             if(((minPt.x > 0.0) || (box_center.x() > 0.0)) && (((minPt.y < street_width)&&(minPt.y > (-street_width))) || ((maxPt.y < street_width)&&(maxPt.y > (-street_width)))) && (distance <= front_distance_threshold))
             {
-                    renderer.RenderBox(box, j, box_center, distance, colors[1]);
+                    renderer.RenderBox(box, j, box_center, distance, colors[0]);
             }
             else
             {
@@ -411,7 +411,7 @@ int main(int argc, char* argv[])
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr input_cloud (new pcl::PointCloud<pcl::PointXYZ>);
 
-    std::vector<boost::filesystem::path> stream(boost::filesystem::directory_iterator{"/app/1_clustering/dataset_2"},
+    std::vector<boost::filesystem::path> stream(boost::filesystem::directory_iterator{"/app/Autonomous_Driving_Systems/1_clustering/dataset_2"},
                                                 boost::filesystem::directory_iterator{});
 
     // sort files in ascending (chronological) order
