@@ -1,4 +1,4 @@
-Academic Year: 2024/2025
+Academic Year: 2025/2026
 
 * Assignment #4 Particle filter localization:
     - Objectives: Localize a forklift using the LiDAR and landmarks as reference

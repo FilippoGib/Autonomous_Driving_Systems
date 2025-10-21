@@ -14,7 +14,7 @@
 * TODO
 * Define the proper number of particles. Parte dell'assignment è fare un report con i vari esperimenti che hai fatto con diverse config e spiegare i risultati
 */
-#define NPARTICLES 0
+#define NPARTICLES 50
 #define circleID "circle_id"
 #define reflectorID "reflector_id"
 
