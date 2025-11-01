@@ -5,6 +5,7 @@
 #include <fstream>
 #include <math.h>
 #include <vector>
+#include <Eigen/Dense>
 #include "particle/map.h"
 
 /*

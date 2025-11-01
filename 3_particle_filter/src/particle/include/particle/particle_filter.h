@@ -62,7 +62,7 @@ public:
 	 *   standard deviation of yaw [rad]]
 	 * @param nParticles Number of particles used by the algorithm
 	 */
-	void init_random(double std[],int nParticles);
+	void init_random(double std[],int nParticles, double min_x, double max_x, double min_y, double max_y);
 
 
 	/**

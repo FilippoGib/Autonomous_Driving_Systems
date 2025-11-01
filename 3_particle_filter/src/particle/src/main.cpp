@@ -17,7 +17,7 @@
 #define NPARTICLES 50
 #define circleID "circle_id"
 #define reflectorID "reflector_id"
-
+#define RANDOM_INIT
 using namespace std;
 using namespace lidar_obstacle_detection;
 
@@ -34,7 +34,7 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_particles(new pcl::PointCloud<pcl::Poi
 * TODO
 * Define the proper noise values
 */
-double sigma_init [3] = {0, 0, 0};  //[x,y,theta] initialization noise. 
+double sigma_init [3] = {2.0, 2.0, 0.52};  //[x,y,theta] initialization noise. -> lets try 2 meters on x,y and 30 degrees on theta
 double sigma_pos [3]  = {0.05, 0.05, 0.05}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
 double sigma_landmark [2] = {0.4, 0.4};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
 std::vector<Color> colors = {Color(1,0,0), Color(1,1,0), Color(0,0,1), Color(1,0,1), Color(0,1,1)};
@@ -174,7 +174,7 @@ int main(int argc,char **argv)
 
     // Read map data
     if (!read_map_data("/app/Autonomous_Driving_Systems/3_particle_filter/data/map_data.txt", map_mille)) {
-        cout << "Error: Could not open map file" << endl;
+        RCLCPP_ERROR(rclcpp::get_logger("pf node logger"), "Error: Could not open map file");
         return -1;
     } 
  
@@ -206,9 +206,38 @@ int main(int argc,char **argv)
     Particle p(GPS_x,GPS_y,GPS_theta);
     best_particles.push_back(p);
     
-    // Init the particle filter
-    pf.init(GPS_x, GPS_y, GPS_theta, sigma_init, NPARTICLES);
-    //pf.init_random(sigma_init,NPARTICLES);
+
+    #ifdef RANDOM_INIT
+        // to be able to inizialize the particles randomly inside of the garage I need to find its convex hull first
+        double min_x, max_x, min_y, max_y;
+
+        min_x =  1e10;
+        max_x = -1e10;
+        min_y =  1e10;
+        max_y = -1e10;
+
+        for (const auto& point : *cloudReflectors)
+        {
+            double x = point.x;
+            double y = point.y;
+            if(x > max_x)
+                max_x = x;
+            if(x < min_x)
+                min_x = x;
+            if(y > max_y)
+                max_y = y;
+            if(y < min_y)
+                min_y = y;
+        }
+
+        min_y = -max_y + 6.0; // magic number yay :))
+
+        pf.init_random(sigma_init,NPARTICLES, min_x, max_x, min_y, max_y); 
+    #endif
+
+    #ifndef RANDOM_INIT
+        pf.init(GPS_x, GPS_y, GPS_theta, sigma_init, NPARTICLES);
+    #endif
 
     // Render all the particles
     for(int i=0;i<NPARTICLES;i++){
@@ -225,7 +254,7 @@ int main(int argc,char **argv)
     renderer.SpinViewerOnce();
 
     // Start ROS node
-    std::cout<<"Map loaded, waiting for the rosbag"<<std::endl;
+    RCLCPP_INFO(rclcpp::get_logger("pf node logger"), "Map loaded, waiting for the rosbag...");
     myfile.open("./res.txt", std::ios_base::app);
 
     rclcpp::init(argc, argv);
