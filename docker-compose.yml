@@ -4,6 +4,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      network: host
     volumes:
       - ..:/app
       - /tmp/.X11-unix:/tmp/.X11-unix:ro
