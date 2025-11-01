@@ -24,7 +24,7 @@ This repository is structured into different modules, each corresponding to a sp
 * **`1_clustering`**: Implementations of clustering algorithms for obstacle detection from lidar pointcloud
 * **`2_kalman_filter`**: Application of Kalman Filters for object tracking and state estimation.
 * **`3_particle_filter`**: Implementation of a Particle Filter (Monte Carlo Localization) for robot localization in structured environment.
-* *(More projects to be added...)*
+* *(More projects coming soon...)*
 
 ---
 
@@ -51,16 +51,16 @@ cd Autonomous_Driving_Systems
 chmod +x start.sh
 chmod +x stop.sh
 
-# 3. Build and start the Docker container(s)
+# 3. Build and start the Docker container
 ./start.sh
 ```
-This will launch the services defined in `docker-compose.yml` and attach you to the shell of the main development container.
+This will launch the services defined in `docker-compose.yml`.
 
 To stop the containers when you're done, run `./stop.sh` from the host machine.
 
 ### 2. Build and Run a Project
 
-My recommendation is to attach to the container inside vscode via the [vscode docker extention](https://code.visualstudio.com/docs/containers/overview) to make the necessary changes (eg: change source data path), navigate to the sub folder you are interested in and build it using ither `cmake` if the project does not use ROS2:
+My recommendation is to attach to the container inside vscode via the [vscode docker extention](https://code.visualstudio.com/docs/containers/overview) to make the necessary changes (eg: change source data path, try different configs, etc.), navigate to the sub folder you are interested in and build it using ither `cmake` if the project does not use ROS2:
 ```bash
 # 1. (e.g., for the kalman filter)
 cd /path/to/2_kalman_filter
