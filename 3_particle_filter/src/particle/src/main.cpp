@@ -17,13 +17,13 @@
 #define NPARTICLES 50
 #define circleID "circle_id"
 #define reflectorID "reflector_id"
-#define RANDOM_INIT
+// #define RANDOM_INIT
 using namespace std;
 using namespace lidar_obstacle_detection;
 
 
 Map map_mille;  
-ParticleFilter pf;
+ParticleFilter pf(0.99, 0.999, 50); // pick values for p_num_decay, p_noise_decay, p_noise_probability_threshold, if last param is 0 we don't have resampling noise
 bool init_odom=false;
 Renderer renderer;
 vector<Particle> best_particles;
@@ -32,11 +32,12 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_particles(new pcl::PointCloud<pcl::Poi
 
 /*
 * TODO
-* Define the proper noise values
+* Define the proper noise valuessigma_pos
 */
-double sigma_init [3] = {2.0, 2.0, 0.52};  //[x,y,theta] initialization noise. -> lets try 2 meters on x,y and 30 degrees on theta
-double sigma_pos [3]  = {0.05, 0.05, 0.05}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
-double sigma_landmark [2] = {0.4, 0.4};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
+double sigma_init [3] = {0.80, 0.80, 0.20};  //[x,y,theta] initialization noise. -> lets try 0.8 meters on x,y and 0.2 rads on theta
+double sigma_resample [3] = {1.0, 1.0, 0.22};
+double sigma_pos [3]  = {0.03, 0.03, 0.01}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
+double sigma_landmark [2] = {0.8, 0.8};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
 std::vector<Color> colors = {Color(1,0,0), Color(1,1,0), Color(0,0,1), Color(1,0,1), Color(0,1,1)};
 control_s odom;
 
@@ -93,6 +94,7 @@ void OdomCb(const nav_msgs::msg::Odometry::SharedPtr msg) {
     }
 
     t_end = std::chrono::high_resolution_clock::now();
+    showPCstatus(cloud_particles, pf.particles);
 }
 
 // This functions processes the point cloud (Update phase)
@@ -129,7 +131,7 @@ void PointCloudCb(const sensor_msgs::msg::PointCloud2::SharedPtr cloud_msg){
     pf.updateWeights(sigma_landmark, noisy_observations, map_mille);
 
     // Resample the particles
-    pf.resample();
+    pf.resample(sigma_resample);
 
     // Calculate and output the average weighted error of the particle filter over all time steps so far.
     Particle best_particle;

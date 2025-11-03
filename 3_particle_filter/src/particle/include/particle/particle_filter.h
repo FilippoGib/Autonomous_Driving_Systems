@@ -30,6 +30,16 @@ class ParticleFilter {
 	
 	// Vector of weights of all particles
 	std::vector<double> weights;
+
+	// Decay factor for the number of particles we resample every time
+	double p_num_decay;
+
+	// Decay factor for the noise added to the particles every time we resample them
+	double p_noise_decay;
+
+	// Percentage of particles we add noise to when we resample, we keep it fixed
+	double p_noise_probability_threshold;
+
 	
 public:
 	
@@ -38,7 +48,12 @@ public:
 
 	// Constructor
 	// @param M Number of particles
-	ParticleFilter() : num_particles(0), is_initialized(false) {}
+	ParticleFilter(double p_num_decay, double p_noise_decay, double p_noise_probability_threshold) : 
+									num_particles(0), 
+									is_initialized(false), 
+									p_num_decay(p_num_decay), 
+									p_noise_decay(p_noise_decay), 
+									p_noise_probability_threshold(p_noise_probability_threshold){}
 
 	// Destructor
 	~ParticleFilter() {}
@@ -99,7 +114,7 @@ public:
 	 * resample Resamples from the updated set of particles to form
 	 *   the new set of particles.
 	 */
-	void resample();
+	void resample(double sigma_resample[]);
 
 	/*
 	 * Set a particles list of associations, along with the associations calculated world x,y coordinates

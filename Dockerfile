@@ -9,7 +9,7 @@ RUN apt-get update && \
       libpcl-dev libboost-all-dev libeigen3-dev \
       mesa-utils libgl1-mesa-dri libglx-mesa0 libgl1 libglu1-mesa \
       libx11-6 libxext6 libxrender1 libsm6 libice6 \
-      libxrandr2 libxinerama1 libxcursor1 libxi6 libceres-dev && \
+      libxrandr2 libxinerama1 libxcursor1 libxi6 libceres-dev vim gdb && \
     # ROS2 rolling installation
     locale-gen en_US.UTF-8 && \
     update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8 && \

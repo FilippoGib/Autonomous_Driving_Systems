@@ -9,7 +9,7 @@ ygt=[]
 time=[]
 fig, (ax1, ax2, ax3) = plt.subplots(3)
 #myfile<< best_particle.x<< " "<< best_particle.y<< " " <<gt_x << " "<<gt_y<<" "<<RMSE(0)<<" "<< RMSE(1)<<" " <<duration.count()<<'\n';
-with open('res.txt','r') as file:
+with open('/home/filippo/Desktop/università/secondo_anno/primo_semestre/ADS/assignments/Autonomous_Driving_Systems/3_particle_filter/res.txt','r') as file:
     # reading each line    
     for line in file:
         # reading each word        

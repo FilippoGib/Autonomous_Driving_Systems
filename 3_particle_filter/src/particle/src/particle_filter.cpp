@@ -49,6 +49,8 @@ void ParticleFilter::init_random(double std[], int nParticles, double min_x, dou
         p.weight = 1.0/nParticles;
         this->particles.push_back(p);
     }
+    this->num_particles = nParticles;
+    is_initialized=true;
 }
 
 /*
@@ -82,6 +84,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[],int nPa
         p.weight = 1.0/nParticles;
         this->particles.push_back(p);
     }
+    this->num_particles = nParticles; 
     is_initialized=true;
 }
 
@@ -218,7 +221,7 @@ void ParticleFilter::updateWeights(double std_landmark[], std::vector<LandmarkOb
         }
         
         //TODO: perform the data association (associate the landmarks to the observations)
-        dataAssociation(mapLandmark, observations);
+        dataAssociation(mapLandmark, transformed_observations);
         
         particles[i].weight = 1.0;
         // Compute the probability
@@ -246,9 +249,16 @@ void ParticleFilter::updateWeights(double std_landmark[], std::vector<LandmarkOb
 * TODO
 * This function resamples the set of particles by repopulating the particles using the weight as metric
 */
-void ParticleFilter::resample() {
-    
+void ParticleFilter::resample(double sigma_resample[]) {
+
+    normal_distribution<double> dist_x(0, sigma_resample[0]); // normal_distribution takes (mean, std)
+    normal_distribution<double> dist_y(0, sigma_resample[1]);
+    normal_distribution<double> dist_theta(0, sigma_resample[2]);
+
+    uniform_int_distribution<int> prob_check_dist(1, 100); // to see if I should add noise to the paticle or not
+
     uniform_int_distribution<int> dist_distribution(0,num_particles-1);
+
     double beta  = 0.0;
     vector<double> weights;
     int index = dist_distribution(gen); // starting point
@@ -264,14 +274,32 @@ void ParticleFilter::resample() {
     // resampling wheel
     for(size_t i = 0; i < this->particles.size(); i++) // TODO: add  a decay factor for the number of particles
     {
-        beta = beta + (double)std::rand()/RAND_MAX *2* max_w;
+        beta = beta + uni_dist(gen) * 2.0;
         while(weights[index] < beta)
         {
             beta = beta-weights[index];
             index = (index+1)%this->particles.size();
         }
-        new_particles.push_back(this->particles[index]); // TODO: add noise factor to new particle
+        // TODO: add noise factor to new particle
+        Particle p = this->particles[index];
+        if(prob_check_dist(gen) < this->p_noise_probability_threshold) // only add noise to a certain percentage of particles
+        {
+            p.x += this->p_noise_decay* dist_x(gen);
+            p.y += this->p_noise_decay* dist_y(gen);
+            p.theta += this->p_noise_decay* dist_theta(gen);
+            p.theta = atan2(sin(p.theta), cos(p.theta)); // wrap in -pi, pi
+        }
+
+        new_particles.push_back(p);
     }
+
+    // update decay factor to make it smaller as time progresses
+    this->p_noise_decay *= this->p_noise_decay;
+
+    // TODO: reduce the number of particles based on this->p_num_decay
+
+    this->particles = new_particles;
+    RCLCPP_INFO(rclcpp::get_logger("pf_logger"),"Number of particles: %zu\n", new_particles.size());
 }
 
 
