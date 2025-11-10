@@ -24,6 +24,7 @@ This repository is structured into different modules, each corresponding to a sp
 * **`1_clustering`**: Implementations of clustering algorithms for obstacle detection from lidar pointcloud
 * **`2_kalman_filter`**: Application of Kalman Filters for object tracking and state estimation.
 * **`3_particle_filter`**: Implementation of a Particle Filter (Monte Carlo Localization) for robot localization in structured environment.
+* **`4_bundle_adjustment`**: Implementation of Bundle Adjustment algorithm for 3D scene reconstruction from images.
 * *(More projects coming soon...)*
 
 ---
