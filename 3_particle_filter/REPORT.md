@@ -19,7 +19,7 @@ The parameters are the following:
 
 - **Results**:
 
-  ![first prototype result](Autonomous_Driving_Systems/3_particle_filter/first_prototype.png)
+  ![first prototype result](3_particle_filter/first_prototype.png)
 
 - **Comments**: The result appears to be really noisy both on the localization and the orientation graph.
 
@@ -93,7 +93,7 @@ See how the filter behaves with random initialization
 
 - **Results**: The robot is now able to localize itself
 
-  ![scenario_1_random_init](Autonomous_Driving_Systems/3_particle_filter/scenario_1_random_init.png)
+  ![scenario_1_random_init](3_particle_filter/scenario_1_random_init.png)
 
 - **Comments**: The result is even better than the base implementation as it shows much less noise on both the localization and the orentation graph, as well as more precise guesses compared to the ground truth graph
 
@@ -118,7 +118,7 @@ I want to see what happens if I keep the same parameters and go back to non-rand
 
 - **Results**: The robot is able to localize itself 
 
-  ![scenario_2_non_random_init](Autonomous_Driving_Systems/3_particle_filter/scenario_2_non_random_init.png)
+  ![scenario_2_non_random_init](3_particle_filter/scenario_2_non_random_init.png)
 
 - **Comments**: The result is really similar to the result of the random init. It is worth noting that the two orientation graphs appear more different, however I think it is due to the fact that the random init graph has a big spike at the beginning due to the fact that the initial orientation is random and it needs some time to adjust. 
 
@@ -136,7 +136,7 @@ I want to see what happens if I keep the same parameters and go back to non-rand
   ```
 - **Results**: To no-one's surprise the result is back to beign super noisy
 
-  ![scenario_2_non_random_init_less_particles](Autonomous_Driving_Systems/3_particle_filter/scenario_2_non_random_init_less_particles.png)
+  ![scenario_2_non_random_init_less_particles](3_particle_filter/scenario_2_non_random_init_less_particles.png)
 
 - **Comments**:
 Reducing the numer of particles allows the algorithm to run much faster -> more odometry samples. The reason why the result is so noisy is because we don't trust the landmarks positions but we also introduce a lot of noise in the prediction.
@@ -163,7 +163,7 @@ In the non-random init model it makes no sense to have low trust in the landmark
   ```
 - **Results**: I am pretty satisfied with the result because it has small noise and it is very accurate
 
-  ![scenario_3_non_random](Autonomous_Driving_Systems/3_particle_filter/scenario_3_non_random.png)
+  ![scenario_3_non_random](3_particle_filter/scenario_3_non_random.png)
 
 - **Comments**: The two graphs appear shifted but actually it is just because they have a different scale. Looking at the number is clear that the two graphs are very similar.
 
@@ -181,7 +181,7 @@ In the non-random init model it makes no sense to have low trust in the landmark
   ```
 - **Results**: I am really satisfied by the result
 
-  ![scenario_3_5000_particles](Autonomous_Driving_Systems/3_particle_filter/scenario_3_5000_particles.png)
+  ![scenario_3_5000_particles](3_particle_filter/scenario_3_5000_particles.png)
 Increasing the number of particles allowed to get an even less noisy and more precise result. 
 
   It is still important to notice that the orientation graph experiences very bigger jitter compared to the prevoius experiment, I believe that this is due to the fact that the computational toll is high on my pc so it sometimes lags behind and gets lost for a moment. This is not noticible on the position graph because the particles are very near to each other therefore picking the wrong one for just one iteration does not make a difference, while in the orientation graph if I pick a particle with the wrong orientation even for one iteration I can spot it immediately because it draws a big spike in my graph.
@@ -200,7 +200,7 @@ Increasing the number of particles allowed to get an even less noisy and more pr
   ```
 - **Results**: The robot got lost
 
-  ![lost_robot](Autonomous_Driving_Systems/3_particle_filter/lost_robot.png)
+  ![lost_robot](3_particle_filter/lost_robot.png)
 
 - **Comments**: I tried to push too much the boudaries of the base PF implementation and the algorithm bumped into a wall. This could be also due to the fact that even with 2000 particles my pc is a bit struggling but since we were able to get a valid result with 5000 I don't think computational toll is the problem here.
 
@@ -218,7 +218,7 @@ Increasing the number of particles allowed to get an even less noisy and more pr
 
 - **Results**: This result is good enough for it to be considered the "stable version" of my PF
 
-  ![step_1_stable](Autonomous_Driving_Systems/3_particle_filter/step_1_stable.png)
+  ![step_1_stable](3_particle_filter/step_1_stable.png)
 
   The localization is really solid and the orientation graph is stable.
 
