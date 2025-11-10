@@ -14,16 +14,20 @@
 * TODO
 * Define the proper number of particles. Parte dell'assignment è fare un report con i vari esperimenti che hai fatto con diverse config e spiegare i risultati
 */
-#define NPARTICLES 50
+#define NPARTICLES 100
 #define circleID "circle_id"
 #define reflectorID "reflector_id"
 // #define RANDOM_INIT
 using namespace std;
 using namespace lidar_obstacle_detection;
 
+static inline constexpr double degrees_to_radiants(double degrees)
+{
+    return degrees * M_PI / 180.0;
+}
 
 Map map_mille;  
-ParticleFilter pf(0.99, 0.999, 50); // pick values for p_num_decay, p_noise_decay, p_noise_probability_threshold, if last param is 0 we don't have resampling noise
+ParticleFilter pf(0.99, 0.999, 0); // pick values for p_num_decay, p_noise_decay, p_noise_probability_threshold, if last param is 0 we don't have resampling noise
 bool init_odom=false;
 Renderer renderer;
 vector<Particle> best_particles;
@@ -34,13 +38,13 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_particles(new pcl::PointCloud<pcl::Poi
 * TODO
 * Define the proper noise valuessigma_pos
 */
-double sigma_init [3] = {0.80, 0.80, 0.20};  //[x,y,theta] initialization noise. -> lets try 0.8 meters on x,y and 0.2 rads on theta
-double sigma_resample [3] = {1.0, 1.0, 0.22};
-double sigma_pos [3]  = {0.03, 0.03, 0.01}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
-double sigma_landmark [2] = {0.8, 0.8};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
+double sigma_resample [3] = {0.30, 0.30, 0.30}; // not used when p_noise_probability_threshold is set to 0
+
+double sigma_init [3] = {0.80, 0.80, 0.10};  //[x,y,theta] initialization noise. -> lets try 0.8 meters on x,y and 0.2 rads on theta
+double sigma_pos [3]  = {.50, .50, degrees_to_radiants(20)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
+double sigma_landmark [2] = {0.30, 0.30};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
 std::vector<Color> colors = {Color(1,0,0), Color(1,1,0), Color(0,0,1), Color(1,0,1), Color(0,1,1)};
 control_s odom;
-
 
 // This function updates the position of the particles in the viewer
 void showPCstatus(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,vector<Particle> particles){

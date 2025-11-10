@@ -245,12 +245,8 @@ void ParticleFilter::updateWeights(double std_landmark[], std::vector<LandmarkOb
     }    
 }
 
-/*
-* TODO
-* This function resamples the set of particles by repopulating the particles using the weight as metric
-*/
-void ParticleFilter::resample(double sigma_resample[]) {
-
+void resamplig_wheel(vector<Particle> &particles, int num_particles, double p_noise_probability_threshold, double p_noise_decay, double sigma_resample[])
+{
     normal_distribution<double> dist_x(0, sigma_resample[0]); // normal_distribution takes (mean, std)
     normal_distribution<double> dist_y(0, sigma_resample[1]);
     normal_distribution<double> dist_theta(0, sigma_resample[2]);
@@ -265,41 +261,48 @@ void ParticleFilter::resample(double sigma_resample[]) {
     vector<Particle> new_particles;
 
     for(int i=0;i<num_particles;i++)
-        weights.push_back(this->particles[i].weight);
+        weights.push_back(particles[i].weight);
 																
     float max_w = *max_element(weights.begin(), weights.end());
     uniform_real_distribution<double> uni_dist(0.0, max_w);
 
     //TODO write here the resampling technique (feel free to use the above variables)
     // resampling wheel
-    for(size_t i = 0; i < this->particles.size(); i++) // TODO: add  a decay factor for the number of particles
+    for(size_t i = 0; i < particles.size(); i++) // TODO: add  a decay factor for the number of particles
     {
         beta = beta + uni_dist(gen) * 2.0;
         while(weights[index] < beta)
         {
             beta = beta-weights[index];
-            index = (index+1)%this->particles.size();
+            index = (index+1)%particles.size();
         }
         // TODO: add noise factor to new particle
-        Particle p = this->particles[index];
-        if(prob_check_dist(gen) < this->p_noise_probability_threshold) // only add noise to a certain percentage of particles
+        Particle p = particles[index];
+        if(prob_check_dist(gen) < p_noise_probability_threshold) // only add noise to a certain percentage of particles
         {
-            p.x += this->p_noise_decay* dist_x(gen);
-            p.y += this->p_noise_decay* dist_y(gen);
-            p.theta += this->p_noise_decay* dist_theta(gen);
+            p.x += p_noise_decay* dist_x(gen);
+            p.y += p_noise_decay* dist_y(gen);
+            p.theta += p_noise_decay* dist_theta(gen);
             p.theta = atan2(sin(p.theta), cos(p.theta)); // wrap in -pi, pi
         }
 
         new_particles.push_back(p);
     }
 
-    // update decay factor to make it smaller as time progresses
-    this->p_noise_decay *= this->p_noise_decay;
-
     // TODO: reduce the number of particles based on this->p_num_decay
 
-    this->particles = new_particles;
+    particles.swap(new_particles);
     RCLCPP_INFO(rclcpp::get_logger("pf_logger"),"Number of particles: %zu\n", new_particles.size());
+} 
+
+/*
+* TODO
+* This function resamples the set of particles by repopulating the particles using the weight as metric
+*/
+void ParticleFilter::resample(double sigma_resample[]) 
+{
+    resamplig_wheel(this->particles,this->num_particles, this->p_noise_probability_threshold, this->p_noise_decay, sigma_resample);
+    this->p_noise_decay *= this->p_noise_decay; // noise decay
 }
 
 
