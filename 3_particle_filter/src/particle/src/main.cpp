@@ -14,7 +14,7 @@
 * TODO
 * Define the proper number of particles. Parte dell'assignment è fare un report con i vari esperimenti che hai fatto con diverse config e spiegare i risultati
 */
-#define NPARTICLES 100
+#define NPARTICLES 2000
 #define circleID "circle_id"
 #define reflectorID "reflector_id"
 // #define RANDOM_INIT
@@ -40,9 +40,9 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_particles(new pcl::PointCloud<pcl::Poi
 */
 double sigma_resample [3] = {0.30, 0.30, degrees_to_radiants(20)}; // not used when p_noise_probability_threshold is set to 0
 
-double sigma_init [3] = {0.80, 0.80, degrees_to_radiants(6)};  //[x,y,theta] initialization noise. -> lets try 0.8 meters on x,y and 0.2 rads on theta
-double sigma_pos [3]  = {.50, .50, degrees_to_radiants(30)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
-double sigma_landmark [2] = {1.0, 1.0};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
+double sigma_init [3] = {0.25, 0.25, degrees_to_radiants(5)};  //[x,y,theta] initialization noise. -> lets try 0.8 meters on x,y and 0.2 rads on theta
+double sigma_pos [3]  = {.10, .10,  degrees_to_radiants(3)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
+double sigma_landmark [2] = {0.10, 0.10};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
 std::vector<Color> colors = {Color(1,0,0), Color(1,1,0), Color(0,0,1), Color(1,0,1), Color(0,1,1)};
 control_s odom;
 
