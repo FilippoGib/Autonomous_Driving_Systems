@@ -9,17 +9,17 @@ Academic Year: 2025/2026
   I was able to implement the basic requirements of the assignment. The result is acceptable however it is really really noisy compared to the "best output" we were given by the professor.
 The parameters are the following: 
 
-``` c++
-#define NPARTICLES 100
-// #define RANDOM_INIT // comment this line to turn random initialization OFF
-double sigma_init [3] = {0.80, 0.80, degrees_to_radiants(6)};  //[x,y,theta] initialization noise. -> lets try 0.8 meters on x,y and 0.10 rads on theta
-double sigma_pos [3]  = {.50, .50, degrees_to_radiants(20)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
-double sigma_landmark [2] = {0.30, 0.30};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
-```
+  ``` c++
+  #define NPARTICLES 100
+  // #define RANDOM_INIT // comment this line to turn random initialization OFF
+  double sigma_init [3] = {0.80, 0.80, degrees_to_radiants(6)};  //[x,y,theta] initialization noise.
+  double sigma_pos [3]  = {.50, .50, degrees_to_radiants(20)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
+  double sigma_landmark [2] = {0.30, 0.30};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
+  ```
 
 - **Results**:
 
-![first prototype result](/first_prototype.png)
+  ![first prototype result](/first_prototype.png)
 
 - **Comments**: The result appears to be really noisy both on the localization and the orientation graph.
 
@@ -48,23 +48,23 @@ See how the filter behaves with random initialization
 **First try**
 
 - **Descirption**: I will keep all the parameters like before and use random initilization
-``` c++
-#define NPARTICLES 100
-#define RANDOM_INIT
-double sigma_init [3] = {0.80, 0.80, degrees_to_radiants(6)};  // does not matter in this scenario
-double sigma_pos [3]  = {.50, .50, degrees_to_radiants(20)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
-double sigma_landmark [2] = {0.30, 0.30};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
-```
+  ``` c++
+  #define NPARTICLES 100
+  #define RANDOM_INIT
+  double sigma_init [3] = {0.80, 0.80, degrees_to_radiants(6)};  // does not matter in this scenario
+  double sigma_pos [3]  = {.50, .50, degrees_to_radiants(20)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
+  double sigma_landmark [2] = {0.30, 0.30};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
+  ```
 - **Results**: The robot is completely unable to localize itself
 - **Comments**: The number of particles might be not enough -> no particles land near the ground truth position.
 
 **Second try**
 
 - **Description**: Try to initialize x50 particles in oder to have more probability of landing in a position near the ground truth
-``` c++
-#define NPARTICLES 5000
-// same as before
-```
+  ``` c++
+  #define NPARTICLES 5000
+  // same as before
+  ```
 
 - **Results:**: The robot is still completely unable to localize itself
 - **Comments**: Since increasing the number of particles did not work I think we need to also work on the other parameters. The problem is that the difference between `initial_guess_init` and `random_init` is bigger than I thought. When we initialize with a solid starting guess we want:
@@ -83,16 +83,17 @@ double sigma_landmark [2] = {0.30, 0.30};     //[x,y] sensor measurement noise. 
 
 **Third try**
 - **Description**: Try to keep a high number of particles and tune the prediction uncertainty and the landmark uncertainty
-``` c++
-#define NPARTICLES 5000
-#define RANDOM_INIT
-double sigma_init [3] = {0.80, 0.80, degrees_to_radiants(6)};  // does not matter in this scenario
-double sigma_pos [3]  = {.50, .50, degrees_to_radiants(30)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
-double sigma_landmark [2] = {1.0, 1.0};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
-```
+  ``` c++
+  #define NPARTICLES 5000
+  #define RANDOM_INIT
+  double sigma_init [3] = {0.80, 0.80, degrees_to_radiants(6)};  // does not matter in this scenario
+  double sigma_pos [3]  = {.50, .50, degrees_to_radiants(30)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
+  double sigma_landmark [2] = {1.0, 1.0};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
+  ```
 
 - **Results**: The robot is now able to localize itself
-![first prototype result](/scenario_1_random_init.png)
+
+  ![first prototype result](/scenario_1_random_init.png)
 
 - **Comments**: The result is even better than the base implementation as it shows much less noise on both the localization and the orentation graph, as well as more precise guesses compared to the ground truth graph
 
@@ -107,16 +108,17 @@ I want to see what happens if I keep the same parameters and go back to non-rand
 
 - **Description**:
 
-``` c++
-#define NPARTICLES 5000
-// #define RANDOM_INIT
-double sigma_init [3] = {0.80, 0.80, degrees_to_radiants(6)};
-double sigma_pos [3]  = {.50, .50, degrees_to_radiants(30)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
-double sigma_landmark [2] = {1.0, 1.0};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
-```
+  ``` c++
+  #define NPARTICLES 5000
+  // #define RANDOM_INIT
+  double sigma_init [3] = {0.80, 0.80, degrees_to_radiants(6)};
+  double sigma_pos [3]  = {.50, .50, degrees_to_radiants(30)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
+  double sigma_landmark [2] = {1.0, 1.0};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
+  ```
 
 - **Results**: The robot is able to localize itself 
-![first prototype result](/scenario_2_non_random_init.png)
+
+  ![first prototype result](/scenario_2_non_random_init.png)
 
 - **Comments**: The result is really similar to the result of the random init. It is worth noting that the two orientation graphs appear more different, however I think it is due to the fact that the random init graph has a big spike at the beginning due to the fact that the initial orientation is random and it needs some time to adjust. 
 
@@ -128,13 +130,13 @@ double sigma_landmark [2] = {1.0, 1.0};     //[x,y] sensor measurement noise. Tr
 
 - **Description**: I want to see what happens when I keep all the parameters as they are now, and I just lower the number of particles back to 100. I expect to go back to a much more noisy graph.
 
-``` c++
-#define NPARTICLES 100
-// same as before
-```
-- **Results**: To no-one surprise the result is back to beign super noisy
+  ``` c++
+  #define NPARTICLES 100
+  // same as before
+  ```
+- **Results**: To no-one's surprise the result is back to beign super noisy
 
-![first prototype result](/scenario_2_non_random_init_less_particles.png)
+  ![first prototype result](/scenario_2_non_random_init_less_particles.png)
 
 - **Comments**:
 Reducing the numer of particles allows the algorithm to run much faster -> more odometry samples. The reason why the result is so noisy is because we don't trust the landmarks positions but we also introduce a lot of noise in the prediction.
@@ -152,15 +154,16 @@ In the non-random init model it makes no sense to have low trust in the landmark
 **First try**
 
 - **Description**: 
-``` c++
-#define NPARTICLES 1000
-// #define RANDOM_INIT
-double sigma_init [3] = {0.30, 0.30, degrees_to_radiants(5)};  //[x,y,theta] initialization noise. -> lets try 0.8 meters on x,y and 0.2 rads on theta
-double sigma_pos [3]  = {.15, .15,  degrees_to_radiants(5)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
-double sigma_landmark [2] = {0.15, 0.15};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
-```
+  ``` c++
+  #define NPARTICLES 1000
+  // #define RANDOM_INIT
+  double sigma_init [3] = {0.30, 0.30, degrees_to_radiants(5)};  //[x,y,theta] initialization noise.
+  double sigma_pos [3]  = {.15, .15,  degrees_to_radiants(5)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
+  double sigma_landmark [2] = {0.15, 0.15};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
+  ```
 - **Results**: I am pretty satisfied with the result because it has small noise and it is very accurate
-![first prototype result](/scenario_3_non_random.png)
+
+  ![first prototype result](/scenario_3_non_random.png)
 
 - **Comments**: The two graphs appear shifted but actually it is just because they have a different scale. Looking at the number is clear that the two graphs are very similar.
 
@@ -169,37 +172,58 @@ double sigma_landmark [2] = {0.15, 0.15};     //[x,y] sensor measurement noise. 
 **Second try**
 
 - **Description**: I just raised the number of particles by a x5 factor
-``` c++
-#define NPARTICLES 5000
-// #define RANDOM_INIT
-double sigma_init [3] = {0.30, 0.30, degrees_to_radiants(5)};  //[x,y,theta] initialization noise. -> lets try 0.8 meters on x,y and 0.2 rads on theta
-double sigma_pos [3]  = {.15, .15,  degrees_to_radiants(5)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
-double sigma_landmark [2] = {0.15, 0.15};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
-```
+  ``` c++
+  #define NPARTICLES 5000
+  // #define RANDOM_INIT
+  double sigma_init [3] = {0.30, 0.30, degrees_to_radiants(5)};  //[x,y,theta] initialization noise.
+  double sigma_pos [3]  = {.15, .15,  degrees_to_radiants(5)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
+  double sigma_landmark [2] = {0.15, 0.15};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
+  ```
 - **Results**: I am really satisfied by the result
-![first prototype result](/scenario_3_5000_particles.png)
+
+  ![first prototype result](/scenario_3_5000_particles.png)
 Increasing the number of particles allowed to get an even less noisy and more precise result. 
 
-  It is still important to notice that the orientation graph experiences very bigger jitter compared to the prevoius experiment, I believe that this is due to the fact that the computational toll is high on my pc so it sometimes lags behind and gets lost for a moment. This is not noticible on the position graph because the particles are very near to each other therefore picking the wrong one for just one iteration does not make a difference, while in the orientation graph if I pick a particle with the wrong orientation even for one iteration i can spot it immediately because it draws a spike in my graph.
+  It is still important to notice that the orientation graph experiences very bigger jitter compared to the prevoius experiment, I believe that this is due to the fact that the computational toll is high on my pc so it sometimes lags behind and gets lost for a moment. This is not noticible on the position graph because the particles are very near to each other therefore picking the wrong one for just one iteration does not make a difference, while in the orientation graph if I pick a particle with the wrong orientation even for one iteration I can spot it immediately because it draws a big spike in my graph.
 
 - **Comments**: The first time I tried with these settings my pc was in power saver mode and I also sped up the bag up to x4.3 in order to conduct my experiment quicker. Needles to say my pc started to lag behind and the robot got completely lost.
 
 **Third try**:
 
 - **Description**: I want to go back to a sligtly smaller number of particles in order to give my pc some breathing room and try to tighten the parameters even more.
-``` c++
-#define NPARTICLES 2000
-// #define RANDOM_INIT
-double sigma_init [3] = {0.25, 0.25, degrees_to_radiants(5)};  //[x,y,theta] initialization noise. -> lets try 0.8 meters on x,y and 0.2 rads on theta
-double sigma_pos [3]  = {.10, .10,  degrees_to_radiants(3)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
-double sigma_landmark [2] = {0.10, 0.10};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
-```
+  ``` c++
+  #define NPARTICLES 2000
+  // #define RANDOM_INIT
+  double sigma_init [3] = {0.25, 0.25, degrees_to_radiants(5)};  //[x,y,theta] initialization noise.
+  double sigma_pos [3]  = {.10, .10,  degrees_to_radiants(3)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
+  double sigma_landmark [2] = {0.10, 0.10};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
+  ```
 - **Results**: The robot got lost
-![first prototype result](/lost_robot.png)
+
+  ![first prototype result](/lost_robot.png)
 
 - **Comments**: I tried to push too much the boudaries of the base PF implementation and the algorithm bumped into a wall. This could be also due to the fact that even with 2000 particles my pc is a bit struggling but since we were able to get a valid result with 5000 I don't think computational toll is the problem here.
 
-- **Next**: ...
+**Fourth Try**
+
+- **Description**: I want to try one last experiment in order to find the best "stable" version of my vanilla PF. For this purpose I decided to backtrack a bit on my parameters by trying a sligtly softer approach:
+
+  ``` c++
+  #define NPARTICLES 2000
+  // #define RANDOM_INIT
+  double sigma_init [3] = {0.30, 0.30, degrees_to_radiants(10)};  //[x,y,theta] initialization noise.
+  double sigma_pos [3]  = {.15, .15,  degrees_to_radiants(5)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
+  double sigma_landmark [2] = {0.15, 0.15};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
+  ```
+
+- **Results**: This result is good enough for it to be considered the "stable version" of my PF
+
+  ![first prototype result](/step_1_stable.png)
+
+  The localization is really solid and the orientation graph is stable.
+
+### Final condsiderations on "Step 2"
+
 
 
 ---
