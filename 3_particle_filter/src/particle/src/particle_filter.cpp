@@ -10,10 +10,14 @@
 #include <string>
 #include <iterator>
 #include <cstdlib>
+
 #include "particle/particle_filter.h"
 using namespace std;
 
 static  default_random_engine gen;
+
+// #define RESAMPLING_WHEEL
+#define RESAMPLING_STRATIFIED
 
 /*
 * TODO
@@ -279,8 +283,61 @@ void resamplig_wheel(vector<Particle> &particles, int num_particles)
     // TODO: reduce the number of particles based on this->p_num_decay
 
     particles.swap(new_particles);
-    RCLCPP_INFO(rclcpp::get_logger("pf_logger"),"Number of particles: %zu\n", new_particles.size());
-} 
+    RCLCPP_INFO(rclcpp::get_logger("pf_logger_wheel"),"Number of particles: %zu\n", new_particles.size());
+}
+
+
+void stratified_resampling(vector<Particle> &particles, int num_particles)
+{
+    vector<Particle> new_particles;
+    new_particles.reserve(num_particles);
+
+    // get weights
+    vector<double> weights; 
+    weights.reserve(num_particles);
+    for(const auto &p : particles) {
+        weights.push_back(p.weight);
+    }
+
+    // compute cumulative weights using std lib function
+    double weights_total = std::accumulate(weights.begin(), weights.end(), 0.0);
+
+    // normalize the weights
+    vector<double> weights_cumulative(num_particles);
+    if (weights_total > 0.0) {
+        weights_cumulative[0] = weights[0] / weights_total;
+        for (int i = 1; i < num_particles; ++i) {
+            weights_cumulative[i] = weights_cumulative[i-1] + (weights[i] / weights_total);
+        }
+    } else {
+        for (int i = 0; i < num_particles; ++i) {
+            weights_cumulative[i] = (double)(i+1) / num_particles;
+        }
+    }
+
+    double substrate_width = 1.0 / num_particles;
+
+    std::uniform_real_distribution<double> distribution(0.0, substrate_width);
+    double draw = distribution(gen);
+    
+    // draw particles from each layer
+    int index = 0;
+    for (int i = 0; i < num_particles; ++i) {
+
+        while (draw > weights_cumulative[index]) {
+            index++;
+            if (index >= num_particles) index = num_particles - 1;
+        }
+        
+        new_particles.push_back(particles[index]);
+        
+        draw += substrate_width;
+    }
+
+    particles.swap(new_particles);
+
+    RCLCPP_INFO(rclcpp::get_logger("pf_logger_stratified"),"Number of particles: %zu\n", new_particles.size());
+}
 
 /*
 * TODO
@@ -288,7 +345,12 @@ void resamplig_wheel(vector<Particle> &particles, int num_particles)
 */
 void ParticleFilter::resample() 
 {
-    resamplig_wheel(this->particles,this->num_particles);
+    #ifdef RESAMPLING_WHEEL
+        resamplig_wheel(this->particles,this->num_particles);
+    #endif
+    #ifdef RESAMPLING_STRATIFIED
+        stratified_resampling(this->particles, this->num_particles);
+    #endif
 }
 
 
