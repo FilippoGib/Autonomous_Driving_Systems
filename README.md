@@ -10,7 +10,7 @@ This is an ongoing effort, and new projects will be added as the course progress
 
 ## Stack
 
-* **Programming Language:** C++
+* **Programming Language:** C++, Python
 * **Framework:** ROS2
 * **Build System:** CMake, Colcon
 * **Environment:** Docker, Docker Compose
@@ -92,5 +92,5 @@ ros2 run pf pf_node
 
 ## Disclaimer
 
-To actually run the code successfully you will need the datasets which are not inlcuded in this repository. These datasets are property of __Hipert srl__. To access them please contact me directly to my private email.
+To actually run the code successfully you will need the datasets which are not inlcuded in this repository. These datasets are property of __Hipert srl__. To access them please contact me directly to my private email and I will ask the professor if it's possible to share them.
 
