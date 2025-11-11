@@ -236,6 +236,7 @@ The experiments in Step 2 successfully squeezed the maximum performance from the
 
 
 3. The Danger of Over-Confidence: In an attempt to get a perfect result, I tightened the parameters too much. When a normal, small odometry drift occurred, the entire particle cloud (which was too small) missed the true pose. Because the sensor trust was also too high, it assigned a weight of near zero to all 2000 particles, causing a total filter collapse. By relaxing the parameters a bit I was able to find the "sweet spot" and obtain a stable solid version.
+3. The Danger of Over-Confidence: In an attempt to get a perfect result, I tightened the parameters too much. When a normal, small odometry drift occurred, the entire particle cloud (which was too small) missed the true pose. Because the sensor trust was also too high, it assigned a weight of near zero to all 2000 particles, causing a total filter collapse. By relaxing the parameters a bit I was able to find the "sweet spot" and obtain a stable solid version.
 
 4. BONUS: I performed some code clean-up and I removed some useless calls that generated random numbers. By doing so I think I unintentionally messed up all the code relying on randomness because the robot had a harder time localizing itself and I had to tune the parameters again.
 
