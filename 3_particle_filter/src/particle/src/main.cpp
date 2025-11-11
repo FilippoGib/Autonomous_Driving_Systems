@@ -27,7 +27,7 @@ static constexpr double degrees_to_radiants(double degrees)
 }
 
 Map map_mille;  
-ParticleFilter pf; // pick values for p_num_decay, p_noise_decay, p_noise_probability_threshold, if last param is 0 we don't have resampling noise
+ParticleFilter pf(3500, 1000);
 bool init_odom=false;
 Renderer renderer;
 vector<Particle> best_particles;
@@ -47,6 +47,12 @@ control_s odom;
 
 // This function updates the position of the particles in the viewer
 void showPCstatus(pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,vector<Particle> particles){
+
+    // fix to remove "frozen" particles
+
+    cloud->points.resize(particles.size());
+    cloud->width = particles.size();
+    cloud->height = 1;
 
     for (size_t i = 0; i < particles.size(); ++i) {
         cloud->points[i].x = particles[i].x;

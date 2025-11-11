@@ -14,10 +14,12 @@
 #include "particle/particle_filter.h"
 using namespace std;
 
-static  default_random_engine gen;
+static default_random_engine gen;
 
 // #define RESAMPLING_WHEEL
 #define RESAMPLING_STRATIFIED
+
+const double IM_LOST_THRESHOLD = 1e-3; 
 
 /*
 * TODO
@@ -249,94 +251,133 @@ void ParticleFilter::updateWeights(double std_landmark[], std::vector<LandmarkOb
     }    
 }
 
-void resamplig_wheel(vector<Particle> &particles, int num_particles)
+// Update signature
+void resamplig_wheel(vector<Particle> &particles, int N_old, int N_new)
 {
-    uniform_int_distribution<int> prob_check_dist(1, 100); // to see if I should add noise to the paticle or not
-
-    uniform_int_distribution<int> dist_distribution(0,num_particles-1);
-
+    uniform_int_distribution<int> dist_distribution(0, N_old - 1); // Use N_old
     double beta  = 0.0;
     vector<double> weights;
-    int index = dist_distribution(gen); // starting point
+    int index = dist_distribution(gen);
     vector<Particle> new_particles;
 
-    for(int i=0;i<num_particles;i++)
+    // Use N_old to populate weights vector
+    weights.reserve(N_old); 
+    for(int i = 0; i < N_old; i++) 
         weights.push_back(particles[i].weight);
-																
+                                                                
     float max_w = *max_element(weights.begin(), weights.end());
     uniform_real_distribution<double> uni_dist(0.0, max_w);
 
-    //TODO write here the resampling technique (feel free to use the above variables)
-    // resampling wheel
-    for(size_t i = 0; i < particles.size(); i++) // TODO: add  a decay factor for the number of particles
+    // Use N_new to create the new particle set
+    new_particles.reserve(N_new);
+    for(size_t i = 0; i < N_new; i++) // <-- Use N_new
     {
         beta = beta + uni_dist(gen) * 2.0;
         while(weights[index] < beta)
         {
             beta = beta-weights[index];
-            index = (index+1)%particles.size();
+            index = (index + 1) % N_old; // <-- Use N_old
         }
-        Particle p = particles[index];
-        new_particles.push_back(p);
+        new_particles.push_back(particles[index]);
     }
 
-    // TODO: reduce the number of particles based on this->p_num_decay
-
     particles.swap(new_particles);
-    RCLCPP_INFO(rclcpp::get_logger("pf_logger_wheel"),"Number of particles: %zu\n", new_particles.size());
+    RCLCPP_INFO(rclcpp::get_logger("pf_logger_wheel"),"New particle count: %zu\n", new_particles.size());
 }
 
-
-void stratified_resampling(vector<Particle> &particles, int num_particles)
+void stratified_resampling(vector<Particle> &particles, int N_old, int N_new)
 {
+    // stratify using the old number of particles
     vector<Particle> new_particles;
-    new_particles.reserve(num_particles);
-
-    // get weights
+    new_particles.reserve(N_new); 
+    
     vector<double> weights; 
-    weights.reserve(num_particles);
-    for(const auto &p : particles) {
+    weights.reserve(N_old);
+
+    for(const auto &p : particles) 
+    {
         weights.push_back(p.weight);
     }
 
-    // compute cumulative weights using std lib function
     double weights_total = std::accumulate(weights.begin(), weights.end(), 0.0);
 
-    // normalize the weights
-    vector<double> weights_cumulative(num_particles);
-    if (weights_total > 0.0) {
+    vector<double> weights_cumulative(N_old);
+    if (weights_total > 0.0) 
+    {
         weights_cumulative[0] = weights[0] / weights_total;
-        for (int i = 1; i < num_particles; ++i) {
+        for (int i = 1; i < N_old; ++i) 
+        {
             weights_cumulative[i] = weights_cumulative[i-1] + (weights[i] / weights_total);
         }
     } else {
-        for (int i = 0; i < num_particles; ++i) {
-            weights_cumulative[i] = (double)(i+1) / num_particles;
+        for (int i = 0; i < N_old; ++i) 
+        {
+            weights_cumulative[i] = (double)(i+1) / N_old;
         }
     }
+    weights_cumulative[N_old - 1] = 1.0; 
 
-    double substrate_width = 1.0 / num_particles;
+    // resample using the new number of particles
+    double substrate_width = 1.0 / N_new; 
 
     std::uniform_real_distribution<double> distribution(0.0, substrate_width);
     double draw = distribution(gen);
     
-    // draw particles from each layer
+    
     int index = 0;
-    for (int i = 0; i < num_particles; ++i) {
-
-        while (draw > weights_cumulative[index]) {
+    for (int i = 0; i < N_new; ++i) 
+    { 
+        while (draw > weights_cumulative[index]) 
+        {
             index++;
-            if (index >= num_particles) index = num_particles - 1;
+            if (index >= N_old) index = N_old - 1;
         }
         
         new_particles.push_back(particles[index]);
-        
         draw += substrate_width;
     }
 
     particles.swap(new_particles);
+    RCLCPP_INFO(rclcpp::get_logger("pf_logger_stratified"),"New particle count: %zu\n", new_particles.size());
+}
 
-    RCLCPP_INFO(rclcpp::get_logger("pf_logger_stratified"),"Number of particles: %zu\n", new_particles.size());
+int ParticleFilter::adaptive_resize_number_of_particles() // adaptive particle filter fashion
+{
+    vector<double> weights;
+    weights.reserve(this->num_particles);
+    double weights_total = 0.0;
+    for(const auto &p : this->particles) {
+        weights.push_back(p.weight);
+        weights_total += p.weight;
+    }
+
+    if (weights_total < IM_LOST_THRESHOLD)
+    {
+        RCLCPP_WARN(rclcpp::get_logger("pf_logger_resize"), "THE FILTER GOT LOST -> SPAWNING MAX NUMBER OF PARTICLES\n");
+        return this->max_particles;
+    }
+
+    double sum_squared_w = 0.0;
+    if (weights_total > 0.0) {
+        for(double &w : weights) {
+            w /= weights_total;
+            sum_squared_w += w * w;
+        }
+    } else {
+        sum_squared_w = 1.0 / this->num_particles;
+    }
+
+    // compute Effective Sample Size (N_eff) this gives us a measure of confidence
+    double N_eff = 1.0 / sum_squared_w;
+
+    // use N_eff to compute the new number of particles N_new
+    double confidence_ratio = N_eff / this->max_particles; 
+    
+    int N_new = (int)(confidence_ratio * (this->max_particles - this->min_particles)) + this->min_particles;
+    
+    N_new = std::clamp(N_new, this->min_particles, this->max_particles);
+    
+    return N_new;
 }
 
 /*
@@ -345,12 +386,17 @@ void stratified_resampling(vector<Particle> &particles, int num_particles)
 */
 void ParticleFilter::resample() 
 {
+    int N_new = adaptive_resize_number_of_particles();
+    int N_old = this->num_particles;
+
     #ifdef RESAMPLING_WHEEL
-        resamplig_wheel(this->particles,this->num_particles);
+        resamplig_wheel(this->particles,N_old, N_new);
     #endif
     #ifdef RESAMPLING_STRATIFIED
-        stratified_resampling(this->particles, this->num_particles);
+        stratified_resampling(this->particles, N_old, N_new);
     #endif
+
+    this->num_particles = N_new;
 }
 
 

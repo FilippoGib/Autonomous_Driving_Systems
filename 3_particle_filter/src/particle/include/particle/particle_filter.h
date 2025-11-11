@@ -31,15 +31,11 @@ class ParticleFilter {
 	// Vector of weights of all particles
 	std::vector<double> weights;
 
-	// Decay factor for the number of particles we resample every time
-	double p_num_decay;
+	// Max number of particles the PF can hold
+	int max_particles;
 
-	// Decay factor for the noise added to the particles every time we resample them
-	double p_noise_decay;
-
-	// Percentage of particles we add noise to when we resample, we keep it fixed
-	double p_noise_probability_threshold;
-
+	// min number of particles the PF can hold
+	int min_particles;
 	
 public:
 	
@@ -48,9 +44,11 @@ public:
 
 	// Constructor
 	// @param M Number of particles
-	ParticleFilter() : 
+	ParticleFilter(int max_particles, int min_particles) : 
 									num_particles(0), 
-									is_initialized(false){}
+									is_initialized(false),
+									max_particles(max_particles),
+									min_particles(min_particles){}
 
 	// Destructor
 	~ParticleFilter() {}
@@ -108,9 +106,16 @@ public:
 			Map map_landmarks);
 	
 	/**
+	 * compute the new number of particles
+	 */
+
+	int adaptive_resize_number_of_particles();
+
+	/**
 	 * resample Resamples from the updated set of particles to form
 	 *   the new set of particles.
 	 */
+
 	void resample();
 
 	/*
