@@ -211,9 +211,9 @@ Increasing the number of particles allowed to get an even less noisy and more pr
   ``` c++
   #define NPARTICLES 2000
   // #define RANDOM_INIT
-  double sigma_init [3] = {0.30, 0.30, degrees_to_radiants(10)};  //[x,y,theta] initialization noise.
-  double sigma_pos [3]  = {.15, .15,  degrees_to_radiants(5)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
-  double sigma_landmark [2] = {0.15, 0.15};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
+  double sigma_init [3] = {0.30, 0.30, degrees_to_radiants(30)};  //[x,y,theta] initialization noise.
+  double sigma_pos [3]  = {.15, .15,  degrees_to_radiants(10)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
+  double sigma_landmark [2] = {0.20, 0.20};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
   ```
 
 - **Results**: This result is good enough for it to be considered the "stable version" of my PF
@@ -244,6 +244,8 @@ When a normal, small odometry drift occurred, the entire particle cloud (which w
 Because the sensor trust was also too high, it assigned a weight of zero to all 2000 particles, causing a total filter collapse.
 
 By relaxing the parameters a bit I was able to find the "sweet spot" and obtain a stable solid version.
+
+4. BONUS: I performed some code clean-up and I removed some useless calls that generated random numbers. By doing so I think I unintentionally messed up all the code relying on randomness because the robot had a harder time localizing itself and I had to tune the parameters again.
 
 ---
 

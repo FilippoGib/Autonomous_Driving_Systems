@@ -245,12 +245,8 @@ void ParticleFilter::updateWeights(double std_landmark[], std::vector<LandmarkOb
     }    
 }
 
-void resamplig_wheel(vector<Particle> &particles, int num_particles, double p_noise_probability_threshold, double p_noise_decay, double sigma_resample[])
+void resamplig_wheel(vector<Particle> &particles, int num_particles)
 {
-    normal_distribution<double> dist_x(0, sigma_resample[0]); // normal_distribution takes (mean, std)
-    normal_distribution<double> dist_y(0, sigma_resample[1]);
-    normal_distribution<double> dist_theta(0, sigma_resample[2]);
-
     uniform_int_distribution<int> prob_check_dist(1, 100); // to see if I should add noise to the paticle or not
 
     uniform_int_distribution<int> dist_distribution(0,num_particles-1);
@@ -276,16 +272,7 @@ void resamplig_wheel(vector<Particle> &particles, int num_particles, double p_no
             beta = beta-weights[index];
             index = (index+1)%particles.size();
         }
-        // TODO: add noise factor to new particle
         Particle p = particles[index];
-        if(prob_check_dist(gen) < p_noise_probability_threshold) // only add noise to a certain percentage of particles
-        {
-            p.x += p_noise_decay* dist_x(gen);
-            p.y += p_noise_decay* dist_y(gen);
-            p.theta += p_noise_decay* dist_theta(gen);
-            p.theta = atan2(sin(p.theta), cos(p.theta)); // wrap in -pi, pi
-        }
-
         new_particles.push_back(p);
     }
 
@@ -299,10 +286,9 @@ void resamplig_wheel(vector<Particle> &particles, int num_particles, double p_no
 * TODO
 * This function resamples the set of particles by repopulating the particles using the weight as metric
 */
-void ParticleFilter::resample(double sigma_resample[]) 
+void ParticleFilter::resample() 
 {
-    resamplig_wheel(this->particles,this->num_particles, this->p_noise_probability_threshold, this->p_noise_decay, sigma_resample);
-    this->p_noise_decay *= this->p_noise_decay; // noise decay
+    resamplig_wheel(this->particles,this->num_particles);
 }
 
 

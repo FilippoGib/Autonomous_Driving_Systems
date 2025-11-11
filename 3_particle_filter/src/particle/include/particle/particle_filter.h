@@ -48,12 +48,9 @@ public:
 
 	// Constructor
 	// @param M Number of particles
-	ParticleFilter(double p_num_decay, double p_noise_decay, double p_noise_probability_threshold) : 
+	ParticleFilter() : 
 									num_particles(0), 
-									is_initialized(false), 
-									p_num_decay(p_num_decay), 
-									p_noise_decay(p_noise_decay), 
-									p_noise_probability_threshold(p_noise_probability_threshold){}
+									is_initialized(false){}
 
 	// Destructor
 	~ParticleFilter() {}
@@ -114,7 +111,7 @@ public:
 	 * resample Resamples from the updated set of particles to form
 	 *   the new set of particles.
 	 */
-	void resample(double sigma_resample[]);
+	void resample();
 
 	/*
 	 * Set a particles list of associations, along with the associations calculated world x,y coordinates
