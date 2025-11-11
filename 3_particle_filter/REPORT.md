@@ -235,15 +235,7 @@ The experiments in Step 2 successfully squeezed the maximum performance from the
 2. Particle Count vs. Computational Cost: The number of particles is a direct trade-off between accuracy and stability on one hand, and computational lag on the other.
 
 
-3. The Danger of Over-Confidence: In an attempt to get a perfect result, I tightened the parameters too much. 
-
-By setting both sigma_pos (the "search cloud") and sigma_landmark (the "target") to tiny values, I made the filter brittle and over-confident.
-
-When a normal, small odometry drift occurred, the entire particle cloud (which was too small) missed the true pose.
-
-Because the sensor trust was also too high, it assigned a weight of zero to all 2000 particles, causing a total filter collapse.
-
-By relaxing the parameters a bit I was able to find the "sweet spot" and obtain a stable solid version.
+3. The Danger of Over-Confidence: In an attempt to get a perfect result, I tightened the parameters too much. When a normal, small odometry drift occurred, the entire particle cloud (which was too small) missed the true pose. Because the sensor trust was also too high, it assigned a weight of near zero to all 2000 particles, causing a total filter collapse. By relaxing the parameters a bit I was able to find the "sweet spot" and obtain a stable solid version.
 
 4. BONUS: I performed some code clean-up and I removed some useless calls that generated random numbers. By doing so I think I unintentionally messed up all the code relying on randomness because the robot had a harder time localizing itself and I had to tune the parameters again.
 
@@ -251,3 +243,29 @@ By relaxing the parameters a bit I was able to find the "sweet spot" and obtain 
 
 ## Step 3: Algorithmic Improvements
 
+### Implement different resampling method
+
+I decided to implement the *stratified resampling* algorithm described in this source documentation: https://ieeexplore.ieee.org/document/7079001
+
+The idea bihind the algorithm is the following:
+
+1. We take the particles weights, we compute the cumulative weights and we normalize them. This way we create our stratification
+2. We divide the cumulative weights interval in num_particles segments.
+3. Each segment will fall in a certain stratification. We sample as many particles of that stratification as the number of segments falling into it.
+
+**Resampling wheel vs Stratified Resampling**
+
+  - *Resampling Wheel*: Each spin of the wheel is a fully independent random draw. 
+    - Pros: Very simple
+    - Cons: Because every pick is fully random, it can happen that in a single spin you pick a high-weight particle all the times and a medium-weight particle 0 times. If this happens we kill all the particles that were good, but didn't recieve a maximum weight at this iteration
+
+- *Stratified resampling*: It divides the entire probability (0.0 to 1.0) into N equal-sized bins. It then draws exactly one random sample from each bin and looks up the correspondent probability strata. 
+  - Pros: Much lower variance. It's guaranteed to select a much more representative and evenly-spread set of particles, closely matching the true probability distribution. This significantly reduces "jitter" and is more stable.
+  - Cons: Slightly more complex.
+
+- **Result**
+![stratified resampling](/stratified_resampling.png)
+
+  The result does not appear to have changed that much however I tryed playing around with the "stable" parameters and the algorithm appears to be less influenced by small parameters shifts.
+
+### Implement different data association technique
