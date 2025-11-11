@@ -224,6 +224,28 @@ Increasing the number of particles allowed to get an even less noisy and more pr
 
 ### Final condsiderations on "Step 2"
 
+The experiments in Step 2 successfully squeezed the maximum performance from the "vanilla" particle filter implementation. This process revealed three critical (and interconnected) trade-offs that govern filter performance:
 
+1. Exploration (Global) vs. Exploitation (Local): My experiments confirm that Global Localization (random init) and Local Localization (gps init) are two fundamentally different problems that require separate tuning:
+
+    - Global Localization requires high exploration. It  required a big number of particles and high-noise parameters in order to to be forgiving to particles far from the truth. This prevents an early collapse.
+
+    - Local Localization requires more exploitation. Once the pose is known, the filter's job is to track it. This requires trust in prediction step  and trust in the sensors. Using Global parameters for a Local problem results in a noisy, estimate.
+
+2. Particle Count vs. Computational Cost: The number of particles is a direct trade-off between accuracy and stability on one hand, and computational lag on the other.
+
+
+3. The Danger of Over-Confidence: In an attempt to get a perfect result, I tightened the parameters too much. 
+
+By setting both sigma_pos (the "search cloud") and sigma_landmark (the "target") to tiny values, I made the filter brittle and over-confident.
+
+When a normal, small odometry drift occurred, the entire particle cloud (which was too small) missed the true pose.
+
+Because the sensor trust was also too high, it assigned a weight of zero to all 2000 particles, causing a total filter collapse.
+
+By relaxing the parameters a bit I was able to find the "sweet spot" and obtain a stable solid version.
 
 ---
+
+## Step 3: Algorithmic Improvements
+
