@@ -269,4 +269,27 @@ The idea bihind the algorithm is the following:
 
   The result does not appear to have changed that much however I tryed playing around with the "stable" parameters and the algorithm appears to be less influenced by small parameters shifts.
 
-### Implement different data association technique
+### Implement adaptive particle filter
+
+I decided to implement the *adaptive resampling* which allows to dynamically change the number of paricles in the filter based on a confidence metric called $N_{eff} = \frac{1}{\sum_{i=1}^N w_i^2}$ where $w_i$ is the normalized i-th weight. So that $\sum_{i=1}^N w_i = 1$
+
+**The result of the above improvements is the following**
+
+``` c++
+#define NPARTICLES 2000 // starting number of particles
+ParticleFilter pf(3500, 2000); // max, min
+double sigma_init [3] = {0.30, 0.30, degrees_to_radiants(30)};  //[x,y,theta] initialization noise.
+double sigma_pos [3]  = {.10, .10,  degrees_to_radiants(5)}; //[x,y,theta] movement noise. Try values between [0.5 and 0.01]
+double sigma_landmark [2] = {0.10, 0.10};     //[x,y] sensor measurement noise. Try values between [0.5 and 0.1]
+```
+
+As we can se we are able to tighten the parameters of the filter much more compared to the vanilla "stable" version. This shows that the two improvements made the filter much more solid to parameters changes.
+
+![stratified resampling](/3_particle_filter/stratified_and_adaptive.png)
+
+
+
+
+
+
+
