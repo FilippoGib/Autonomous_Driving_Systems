@@ -2,9 +2,9 @@ import os
 import shutil
 
 # --- CONFIGURATION ---
-SOURCE_DIR = "../dataset/images/TUM/sequence_49/images"          # Your original folder
-DEST_DIR = "../dataset/images/TUM/sequence_49/images_downsampled"  # New folder
-STEP = 3                       # Keep 1, skip 2 (Indices: 0, 3, 6, 9...)
+SOURCE_DIR = "/home/filippo/Desktop/università/secondo_anno/primo_semestre/ADS/assignments/Autonomous_Driving_Systems/4_bundle_adjustment/dataset/images/tum/dataset-outdoors4_512_16/mav0/cam0/data"          # Your original folder
+DEST_DIR = "/home/filippo/Desktop/università/secondo_anno/primo_semestre/ADS/assignments/Autonomous_Driving_Systems/4_bundle_adjustment/dataset/images/tum/dataset-outdoors4_512_16/mav0/cam0/data_downsampled"  # New folder
+STEP = 6                       # Keep 1, skip 2 (Indices: 0, 3, 6, 9...)
 # ---------------------
 
 def decimate_images():

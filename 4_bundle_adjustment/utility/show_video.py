@@ -77,4 +77,4 @@ def view_frames_interactively(image_folder, starting_offset=0, n_frames=None):
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    view_frames_interactively('/home/filippo/Desktop/università/secondo_anno/primo_semestre/ADS/assignments/Autonomous_Driving_Systems/4_bundle_adjustment/dataset/images/TUM/sequence_49/images_downsampled', 180 , 100)
+    view_frames_interactively('/home/filippo/Desktop/università/secondo_anno/primo_semestre/ADS/assignments/Autonomous_Driving_Systems/4_bundle_adjustment/dataset/images/tum/dataset-outdoors4_512_16/dso/cam0/images_downsampled', 300, 100)
